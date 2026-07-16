@@ -143,7 +143,12 @@ export function applyExtractedProfile(
 ): BrandProfile {
   assertKnownEvidenceIds(extracted.evidenceIds, deterministic.evidence);
   const { evidenceIds: _evidenceIds, ...fields } = extracted;
-  return brandProfileSchema.parse({ ...fields, canonicalDomain, evidence: deterministic.evidence });
+  return brandProfileSchema.parse({
+    ...fields,
+    products: fields.products.length ? fields.products : deterministic.products,
+    canonicalDomain,
+    evidence: deterministic.evidence,
+  });
 }
 
 export function applyCandidateEnrichment(

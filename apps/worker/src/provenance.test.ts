@@ -60,6 +60,14 @@ describe("server-owned evidence provenance", () => {
     expect(result.evidence).not.toBe(profile.evidence);
   });
 
+  it("retains the evidence-derived offer when the model omits products", () => {
+    const result = applyExtractedProfile(profile, "canonical.example", {
+      ...extracted,
+      products: [],
+    });
+    expect(result.products).toEqual(profile.products);
+  });
+
   it("rejects fabricated extraction evidence IDs", () => {
     expect(() =>
       applyExtractedProfile(profile, "canonical.example", {
