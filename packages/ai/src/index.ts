@@ -48,7 +48,8 @@ function parseCandidate<T>(schema: z.ZodType<T>, value: unknown): T {
     return schema.parse(JSON.parse(cleaned));
   }
   if (value && typeof value === "object" && "response" in value) {
-    return parseCandidate(schema, (value as { response: unknown }).response);
+    const response = (value as { response: unknown }).response;
+    if (response != null) return parseCandidate(schema, response);
   }
   if (value && typeof value === "object" && "choices" in value) {
     const content = (value as { choices?: Array<{ message?: { content?: unknown } }> }).choices?.[0]

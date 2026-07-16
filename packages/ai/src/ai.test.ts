@@ -101,4 +101,29 @@ describe("Cloudflare structured responses", () => {
     expect(result.data).toEqual({ brandName: "Compass Labs", evidenceIds: ["web-2-1"] });
     expect(result.outputUnits).toBe(61);
   });
+
+  it("falls through from a null structured response to chat choices", async () => {
+    const provider = new CloudflareProvider({
+      run: async () => ({
+        response: null,
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({ brandName: "Choice fallback", evidenceIds: ["web-1-1"] }),
+            },
+          },
+        ],
+      }),
+    });
+    const result = await provider.generate({
+      task: "brand-extraction",
+      schema,
+      input: {},
+      system: "Extract",
+      maxOutputTokens: 200,
+      temperature: 0,
+      promptVersion: "brand-v2",
+    });
+    expect(result.data.brandName).toBe("Choice fallback");
+  });
 });
