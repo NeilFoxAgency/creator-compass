@@ -123,8 +123,8 @@ function recommendation(profile: BrandProfile, territory: CreatorTerritory, scor
     creatorSizeBand: score >= 75 ? "micro" : score >= 62 ? "small" : "nano",
     sponsorshipFormats: [format, "integrated demonstration"],
     campaignConcepts: [
-      { title: "The real-world route", concept: `Show ${product} inside a realistic ${territory.name.toLowerCase()} routine, including one limitation.`, openingHook: `“I changed one part of my routine for a week—here is what actually happened.”` },
-      { title: "The decision guide", concept: `Compare the current approach with ${product} using three practical decision criteria.`, openingHook: `“Before you choose this kind of solution, ask these three questions.”` },
+      { title: `${territory.name} in practice`, concept: `Show ${product} inside a realistic ${territory.name.toLowerCase()} routine, including one limitation relevant to people trying to ${need}.`, openingHook: `“Here is how ${product} fits into ${need}—and where it does not.”` },
+      { title: `${product} decision guide`, concept: `Compare the current approach with ${product} using three criteria that matter when the goal is to ${need}.`, openingHook: `“If you are trying to ${need}, compare these three tradeoffs first.”` },
     ],
     viewerObjection: `Viewers may question whether ${product} is genuinely useful or merely a sponsored interruption.`,
     keyRisk: territory.riskTags[0] ?? "The creative connection could feel forced without specific evidence.",
@@ -162,7 +162,7 @@ export function hasSufficientEvidence(profile: BrandProfile) {
   const broadMultiCategory = new Set(profile.products.map((item) => item.category.toLowerCase())).size >= 4
     || /\b(wide range|all categories|everything for everyone|multi-category)\b/i.test(profile.summary);
   return profile.evidence.length >= 2
-    && profile.summary.trim().length >= 80
+    && profile.summary.trim().length >= 40
     && profile.products.length > 0
     && profile.targetCustomers.some((item) => item.trim().length >= 5)
     && profile.customerNeeds.some((item) => item.trim().length >= 5)

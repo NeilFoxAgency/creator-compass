@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-16T19:42:33.226Z",
-  "methodology": "2026.07.1",
+  "generatedAt": "2026-07-16T20:14:31.616Z",
+  "methodology": "2026.07.2",
   "passed": true,
   "cases": [
     {
@@ -12,6 +12,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -19,7 +20,7 @@
         "risk": 2
       },
       "northStar": "outdoor-recreation",
-      "readinessStatus": "ready"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "DailyTable",
@@ -30,6 +31,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -37,7 +39,7 @@
         "risk": 2
       },
       "northStar": "cooking-and-meal-preparation",
-      "readinessStatus": "ready"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "Main Street HVAC",
@@ -48,6 +50,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -55,7 +58,7 @@
         "risk": 2
       },
       "northStar": "home-improvement",
-      "readinessStatus": "promising"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "ClearClaim",
@@ -66,6 +69,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -73,7 +77,7 @@
         "risk": 2
       },
       "northStar": "wellness-routines",
-      "readinessStatus": "promising"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "QuietDesk",
@@ -84,6 +88,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -91,7 +96,7 @@
         "risk": 2
       },
       "northStar": "productivity-systems",
-      "readinessStatus": "ready"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "GlowTheory",
@@ -102,6 +107,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -109,7 +115,7 @@
         "risk": 2
       },
       "northStar": "skincare-education",
-      "readinessStatus": "promising"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "PawRoutine",
@@ -120,6 +126,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -127,7 +134,7 @@
         "risk": 2
       },
       "northStar": "pet-care",
-      "readinessStatus": "ready"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "CourseCraft",
@@ -138,6 +145,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -145,7 +153,7 @@
         "risk": 2
       },
       "northStar": "career-development",
-      "readinessStatus": "ready"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "LoopBottle",
@@ -156,6 +164,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -163,7 +172,7 @@
         "risk": 2
       },
       "northStar": "sustainable-living",
-      "readinessStatus": "ready"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "PixelForge",
@@ -174,6 +183,7 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
@@ -181,7 +191,7 @@
         "risk": 2
       },
       "northStar": "miniature-painting",
-      "readinessStatus": "ready"
+      "readinessStatus": "prepare-first"
     },
     {
       "case": "ManyThings",
@@ -192,14 +202,15 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
         "experimental": 1,
         "risk": 2
       },
-      "northStar": "pet-care",
-      "readinessStatus": "ready"
+      "northStar": "ABSTAINED",
+      "readinessStatus": "insufficient-evidence"
     },
     {
       "case": "SparseBrand",
@@ -210,13 +221,14 @@
       "prohibitedClaims": false,
       "plausibleCore": true,
       "readinessExpected": true,
+      "abstentionExpected": true,
       "classCounts": {
         "core": 3,
         "adjacent": 2,
         "experimental": 1,
         "risk": 2
       },
-      "northStar": "accessibility-and-adaptive-living",
+      "northStar": "ABSTAINED",
       "readinessStatus": "insufficient-evidence"
     }
   ]
