@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { BrandProfile } from "@creator-compass/contracts";
 import { buildCandidateSet } from "@creator-compass/scoring";
-import { applyCandidateEnrichment, applyExtractedProfile, prepareEvidenceForModel } from "./index";
+import {
+  applyCandidateEnrichment,
+  applyExtractedProfile,
+  normalizeReviewFormat,
+  prepareEvidenceForModel,
+} from "./index";
 
 const profile: BrandProfile = {
   canonicalDomain: "server-owned.example",
@@ -157,5 +162,16 @@ describe("server-owned evidence provenance", () => {
         profile.evidence,
       ),
     ).toThrow(/placeholders|unsupported/);
+  });
+
+  it("replaces schema-error prose returned as a North Star format", () => {
+    const candidate = buildCandidateSet(profile, 12)[0]!;
+    expect(
+      normalizeReviewFormat(
+        "The response must conform to the supplied schema; no additional fields are included.",
+        candidate,
+      ),
+    ).toBe(candidate.sponsorshipFormats[0]);
+    expect(normalizeReviewFormat("case-study teardown", candidate)).toBe("case-study teardown");
   });
 });

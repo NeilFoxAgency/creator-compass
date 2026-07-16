@@ -336,6 +336,31 @@ function validPortfolio(review: FinalReview, candidates: TerritoryRecommendation
   );
 }
 
+export function normalizeReviewFormat(format: string, northCandidate: TerritoryRecommendation) {
+  const invalidFormat =
+    /^(?:invalid\b|object|unknown|not applicable|you must\b)/i.test(format.trim()) ||
+    /\b(?:response|schema|supplied|additional propert(?:y|ies)|field)\b/i.test(format);
+  return invalidFormat
+    ? (northCandidate.sponsorshipFormats[0] ?? "integrated demonstration")
+    : format;
+}
+
+function normalizeReportForDelivery(value: unknown) {
+  const report = creatorCompassReportSchema.parse(value);
+  if (!report.northStar) return report;
+  const northCandidate = report.territories.find(
+    (territory) => territory.territoryId === report.northStar?.territoryId,
+  );
+  if (!northCandidate) return report;
+  return {
+    ...report,
+    northStar: {
+      ...report.northStar,
+      format: normalizeReviewFormat(report.northStar.format, northCandidate),
+    },
+  };
+}
+
 function applyReview(
   report: CreatorCompassReport,
   review: FinalReview,
@@ -346,18 +371,13 @@ function applyReview(
     throw new Error("The strategic review returned an invalid portfolio.");
   const candidateMap = new Map(candidates.map((candidate) => [candidate.territoryId, candidate]));
   const northCandidate = candidateMap.get(review.northStarTerritoryId)!;
-  const invalidFormat = /^(?:invalid\b|object|unknown|not applicable|you must\b)/i.test(
-    review.format.trim(),
-  );
   report.territories = review.portfolio.map((item) => ({
     ...candidateMap.get(item.territoryId)!,
     classification: item.classification,
   }));
   report.northStar = {
     territoryId: review.northStarTerritoryId,
-    format: invalidFormat
-      ? (northCandidate.sponsorshipFormats[0] ?? "integrated demonstration")
-      : review.format,
+    format: normalizeReviewFormat(review.format, northCandidate),
     creatorDirection: review.creatorDirection,
     testShape: review.testShape,
     why: review.why,
@@ -817,12 +837,12 @@ app.get("/api/analyses/:id", async (c) => {
 app.get("/api/reports/:slug", async (c) => {
   const slug = c.req.param("slug");
   const cached = await c.env.REPORT_CACHE.get(`report:${slug}`);
-  if (cached) return c.json(JSON.parse(cached));
+  if (cached) return c.json(normalizeReportForDelivery(JSON.parse(cached)));
   const row = await c.env.DB.prepare("SELECT report_json FROM reports WHERE slug = ?")
     .bind(slug)
     .first<{ report_json: string }>();
   if (!row) return jsonError("Report not found.", "NOT_FOUND", 404);
-  return c.json(JSON.parse(row.report_json));
+  return c.json(normalizeReportForDelivery(JSON.parse(row.report_json)));
 });
 
 app.post("/api/reports/:slug/refresh", async (c) => {
