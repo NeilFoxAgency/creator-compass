@@ -5,6 +5,7 @@ import type {
   TerritoryRecommendation,
 } from "@creator-compass/contracts";
 import { sampleReport } from "./sample";
+import { isSampleReport, stripOuterQuotationMarks } from "./display";
 
 const stageLabels: Record<string, string> = {
   queued: "Preparing your analysis",
@@ -227,7 +228,7 @@ function LandingPage() {
           <figure className="photo-wide">
             <img
               src="/stock/campaign-planning-1280.webp"
-              alt="Marketing team reviewing a creator campaign plan together"
+              alt="Creator strategists mapping campaign territories together"
               loading="lazy"
             />
             <figcaption>From strategic direction to a campaign your team can brief.</figcaption>
@@ -246,7 +247,7 @@ function LandingPage() {
             <figure className="photo-portrait">
               <img
                 src="/stock/creator-studio-900.webp"
-                alt="Creator recording content in a home studio"
+                alt="Planner and campaign notes arranged on a creative workspace"
                 loading="lazy"
               />
             </figure>
@@ -520,6 +521,7 @@ function ReportPage({ slug }: { slug: string }) {
 }
 
 function Report({ report }: { report: CreatorCompassReport }) {
+  const sample = isSampleReport(report.slug);
   const initialTerritory =
     (report.northStar
       ? report.territories.find((item) => item.territoryId === report.northStar?.territoryId)
@@ -551,7 +553,7 @@ function Report({ report }: { report: CreatorCompassReport }) {
             <p>{report.brandProfile.summary}</p>
           </div>
           <div className="report-actions">
-            <button onClick={share}>Share report ↗</button>
+            {!sample && <button onClick={share}>Share report ↗</button>}
             <button onClick={() => print()}>Print ↓</button>
           </div>
         </section>
@@ -891,7 +893,7 @@ function TerritoryDetail({ territory }: { territory: TerritoryRecommendation }) 
           <div key={concept.title}>
             <b>{concept.title}</b>
             <p>{concept.concept}</p>
-            <q>{concept.openingHook}</q>
+            <q>{stripOuterQuotationMarks(concept.openingHook)}</q>
           </div>
         ))}
       </div>
