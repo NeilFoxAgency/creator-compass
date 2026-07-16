@@ -165,12 +165,19 @@ describe("Mistral structured responses", () => {
       promptVersion: "mistral-smoke-v1",
     });
     expect(requestBody).toMatchObject({
-      model: "mistral-small-2603+1",
-      response_format: { type: "json_object" },
+      model: "mistral-small-2603",
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "brand_extraction",
+          schema: { type: "object" },
+        },
+      },
+      reasoning_effort: "none",
     });
     expect(result).toMatchObject({
       provider: "mistral",
-      model: "mistral-small-2603+1",
+      model: "mistral-small-2603",
       inputUnits: 72,
       outputUnits: 21,
       data: { brandName: "Compass Test", evidenceIds: ["test-1"] },

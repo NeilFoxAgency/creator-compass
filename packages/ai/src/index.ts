@@ -112,11 +112,12 @@ export class MistralProvider implements StructuredModelProvider {
   readonly name = "mistral" as const;
   constructor(
     private readonly apiKey: string,
-    private readonly model = "mistral-small-2603+1",
+    private readonly model = "mistral-small-2603",
   ) {}
 
   async generate<T>(request: StructuredGenerationRequest<T>): Promise<ModelResult<T>> {
     const started = Date.now();
+    const jsonSchema = z.toJSONSchema(request.schema, { target: "draft-7" });
     const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: { authorization: `Bearer ${this.apiKey}`, "content-type": "application/json" },
@@ -129,13 +130,22 @@ export class MistralProvider implements StructuredModelProvider {
           },
           { role: "user", content: JSON.stringify(request.input) },
         ],
-        response_format: { type: "json_object" },
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: request.task.replace(/-/g, "_"), schema: jsonSchema },
+        },
+        reasoning_effort: "none",
         max_tokens: request.maxOutputTokens,
         temperature: request.temperature,
       }),
       signal: AbortSignal.timeout(25_000),
     });
-    if (!response.ok) throw new Error(`Mistral request failed with ${response.status}.`);
+    if (!response.ok) {
+      const detail = (await response.text()).replace(/\s+/g, " ").trim().slice(0, 500);
+      throw new Error(
+        `Mistral request failed with ${response.status}${detail ? `: ${detail}` : "."}`,
+      );
+    }
     const body = (await response.json()) as {
       id?: string;
       choices?: Array<{ message?: { content?: string } }>;
