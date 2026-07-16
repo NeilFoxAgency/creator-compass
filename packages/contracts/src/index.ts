@@ -85,6 +85,18 @@ export const finalReviewSchema = z.object({
   assumptions: z.array(z.string()),
 });
 
+export const candidateEnrichmentSchema = z.object({
+  candidates: z.array(z.object({
+    territoryId: z.string(),
+    audienceConnection: z.string(),
+    creatorProfile: z.string(),
+    campaignConcepts: z.array(z.object({ title: z.string(), concept: z.string(), openingHook: z.string() })).length(2),
+    viewerObjection: z.string(),
+    keyRisk: z.string(),
+    evidenceIds: z.array(z.string()).min(1),
+  })).min(1).max(12),
+});
+
 export const creatorCompassReportSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -97,6 +109,8 @@ export const creatorCompassReportSchema = z.object({
     score: z.number().min(0).max(100).nullable(),
     summary: z.string(),
   }),
+  recommendationState: z.enum(["recommendation", "preliminary-hypotheses"]).default("recommendation"),
+  clarifyingQuestions: z.array(z.string()).default([]),
   territories: z.array(territoryRecommendationSchema).length(8),
   northStar: z.object({
     territoryId: z.string(),
@@ -105,7 +119,7 @@ export const creatorCompassReportSchema = z.object({
     testShape: z.string(),
     why: z.string(),
     fixFirst: z.array(z.string()),
-  }),
+  }).nullable(),
   nextSteps: z.array(z.string()).length(5),
   assumptions: z.array(z.string()),
   methodologyVersion: z.string(),
@@ -115,6 +129,11 @@ export const creatorCompassReportSchema = z.object({
     promptVersion: z.string(),
     qualityFlag: z.enum(["gpt56", "cloudflare-fallback", "deterministic-fallback"]),
   }),
+  providerPath: z.object({
+    brandExtraction: z.string(),
+    candidateEnrichment: z.string(),
+    finalReview: z.string(),
+  }).optional(),
 });
 
 export const analysisInputSchema = z
@@ -162,3 +181,4 @@ export type CreatorCompassReport = z.infer<typeof creatorCompassReportSchema>;
 export type AnalysisInput = z.infer<typeof analysisInputSchema>;
 export type AnalysisJob = z.infer<typeof analysisJobSchema>;
 export type FinalReview = z.infer<typeof finalReviewSchema>;
+export type CandidateEnrichment = z.infer<typeof candidateEnrichmentSchema>;
