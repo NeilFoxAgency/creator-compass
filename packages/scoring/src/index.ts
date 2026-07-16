@@ -263,6 +263,16 @@ const genericMatchWords = new Set([
   "service",
 ]);
 const territorySignals: Record<string, string[]> = {
+  "marketing-education": ["marketing", "email", "campaign", "automation", "sms"],
+  "consumer-technology": [
+    "technology",
+    "software",
+    "browser",
+    "privacy",
+    "internet",
+    "open source",
+  ],
+  "beauty-tutorials": ["beauty", "makeup", "lip", "balm"],
   "home-improvement": ["hvac", "heating", "cooling", "contractor", "installation", "residential"],
   "wellness-routines": ["wellness", "supplement", "energy", "self care"],
   "skincare-education": ["skincare", "skin", "sensitive skin", "ingredient"],
@@ -353,6 +363,8 @@ function recommendation(
     profile.customerNeeds[0] ?? territory.audienceMotivations[0] ?? "make a confident choice";
   const product = profile.products[0]?.name ?? profile.brandName;
   const format = territory.commonContentFormats[0] ?? "practical demonstration";
+  const supportingFormat = territory.commonContentFormats[1] ?? "practical comparison";
+  const motivation = territory.audienceMotivations[0] ?? need;
   return {
     territoryId: territory.id,
     name: territory.name,
@@ -370,14 +382,14 @@ function recommendation(
     sponsorshipFormats: [format, "integrated demonstration"],
     campaignConcepts: [
       {
-        title: `${territory.name} in practice`,
-        concept: `Show ${product} inside a realistic ${territory.name.toLowerCase()} routine, including one limitation relevant to people trying to ${need}.`,
-        openingHook: `“Here is how ${product} fits into ${need}—and where it does not.”`,
+        title: `${product}: ${format}`,
+        concept: `Create a ${format} that places ${product} in a ${territory.name.toLowerCase()} moment for viewers motivated by ${motivation}, answering ${need} and stating one limitation.`,
+        openingHook: `“For ${territory.name.toLowerCase()} viewers looking for ${need}, here is the tradeoff I would check first.”`,
       },
       {
-        title: `${product} decision guide`,
-        concept: `Compare the current approach with ${product} using three criteria that matter when the goal is to ${need}.`,
-        openingHook: `“If you are trying to ${need}, compare these three tradeoffs first.”`,
+        title: `${territory.name} tradeoff test`,
+        concept: `Have a creator test ${product} against the audience's current approach using ${supportingFormat} and three criteria specific to ${territory.name.toLowerCase()}.`,
+        openingHook: `“Does ${product} actually help with ${motivation}? I tested the part most reviews skip.”`,
       },
     ],
     viewerObjection: `Viewers may question whether ${product} is genuinely useful or merely a sponsored interruption.`,

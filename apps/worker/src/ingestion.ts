@@ -301,19 +301,20 @@ export function deterministicProfile(
   const lower = text.toLowerCase();
   const categories = [
     "software",
+    "marketing",
     "skincare",
     "food",
     "fitness",
     "education",
-    "home",
-    "travel",
     "finance",
     "fashion",
     "creator",
-    "marketing",
     "service",
+    "travel",
+    "home",
   ];
-  const category = categories.find((item) => lower.includes(item)) ?? "consumer offering";
+  const category =
+    categories.find((item) => new RegExp(`\\b${item}\\b`).test(lower)) ?? "consumer offering";
   const price = text.match(/(?:\$|£|€)\s?\d+(?:[,.]\d{2})?/)?.[0];
   const riskTags = [
     lower.match(/health|medical|supplement|wellness/) ? "medical claims" : "",

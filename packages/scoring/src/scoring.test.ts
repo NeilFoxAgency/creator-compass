@@ -59,6 +59,22 @@ describe("deterministic scoring", () => {
     expect(report.northStar).not.toBeNull();
   });
 
+  it("prioritizes explicit marketing evidence over generic home navigation", () => {
+    const marketingProfile: BrandProfile = {
+      ...profile,
+      brandName: "CampaignSuite",
+      summary:
+        "Email marketing and SMS automation software for small businesses to create campaigns and understand customer engagement.",
+      products: [{ name: "CampaignSuite", category: "marketing" }],
+      targetCustomers: ["small business marketers"],
+      customerNeeds: ["create email campaigns and automate customer communication"],
+    };
+    const ranked = rankTerritories(marketingProfile);
+    const marketing = ranked.find((item) => item.territory.id === "marketing-education");
+    const home = ranked.find((item) => item.territory.id === "home-improvement");
+    expect(marketing?.score).toBeGreaterThan(home?.score ?? 0);
+  });
+
   it("abstains for SparseBrand without inventing a North Star or score", () => {
     const sparse: BrandProfile = {
       ...profile,
