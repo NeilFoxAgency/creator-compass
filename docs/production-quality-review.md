@@ -3,7 +3,7 @@
 Date: 2026-07-16  
 Production: <https://creatorcompass.neilfoxagency.com>  
 Methodology: `2026.07.2`  
-Reviewed deployment: `9e97a5b1-675a-453f-a3a5-f88baa5aa5cf`
+Reviewed deployment: `088808e3-0649-4b40-9093-7cccf002471b`
 
 ## Production provider diagnostics
 
@@ -21,9 +21,15 @@ These are the exact cumulative production counters returned by `/api/admin/diagn
 
 Cloudflare candidate enrichment recorded 49 calls, 24 failed attempts, and 25 successful calls.
 The report pipeline can retain successful chunks while replacing rejected or failed chunks with
-deterministic content. Mistral was not invoked because production health correctly reported
-`mistral: false`; no Mistral key is installed. Health reported Cloudflare and OpenAI enabled,
-with YouTube disabled.
+deterministic content. Mistral brand-extraction and candidate-enrichment fallback use remains zero
+because no new production report needed that fallback during this review. Production health now
+reports Cloudflare, OpenAI, and Mistral enabled, with YouTube disabled.
+
+The protected live Mistral smoke test completed twice successfully after the adapter repair. The
+captured verification returned model `mistral-small-2603`, 569 ms latency, 65 input tokens, 32 output
+tokens, and schema-valid output containing the supplied `test-1` evidence ID. The cumulative smoke
+counter is 9 calls and 7 failures: the seven failures are the intentionally observed adapter/model
+iterations that led to the repair, not report-pipeline fallback attempts.
 
 The adapter now sends the Zod-derived JSON Schema as Cloudflare `response_format`, accepts both
 structured `response` and `choices[0].message.content`, records returned usage, and never retries an
@@ -68,6 +74,10 @@ motivation, and evidence selected for that candidate.
   claims instead of publishing them.
 - Matched the Neil Fox Agency palette, typography, logo treatment, rounded imagery, and overall visual
   language. Rebuilt the report-preview compass as a bounded responsive card so labels cannot overlap.
+- Replaced the illustrative stock assets with two licensed Pexels photographs, removed the sample-only
+  Share control, and normalized model-supplied opening-hook quotation marks.
+- Corrected the Mistral model ID, moved the adapter to Zod-derived custom JSON Schema output, disabled
+  reasoning output for deterministic pipeline steps, and added a protected live provider smoke test.
 - Expanded CI to run typecheck, tests, formatting, evaluation, deploy dry run, and build.
 
 ## Verification
@@ -77,7 +87,7 @@ Final local pipeline:
 | Command               | Result                                                        |
 | --------------------- | ------------------------------------------------------------- |
 | `pnpm typecheck`      | Pass                                                          |
-| `pnpm test`           | Pass — 7 files, 36 tests                                      |
+| `pnpm test`           | Pass — 8 files, 39 tests                                      |
 | `pnpm format:check`   | Pass                                                          |
 | `pnpm eval`           | Pass — 12/12, including SparseBrand and ManyThings abstention |
 | `pnpm deploy:dry-run` | Pass                                                          |
@@ -85,17 +95,22 @@ Final local pipeline:
 
 Production checks:
 
-- `/api/health`: `ok: true`, methodology `2026.07.2`, Cloudflare and OpenAI enabled, Mistral and
+- `/api/health`: `ok: true`, methodology `2026.07.2`, Cloudflare, OpenAI, and Mistral enabled, and
   YouTube disabled.
 - Landing page, SPA report route, and report API returned HTTP 200.
 - The final live landing page retained the custom domain, repaired responsive compass visual, agency
-  branding, and rounded editorial imagery.
-- Installed Worker secrets are `OPENAI_API_KEY` and a QA-only admin bypass; no Turnstile secret is
-  installed.
+  branding, and rounded Pexels photography.
+- Desktop and 390 px mobile browser checks found no horizontal overflow or console errors. The sample
+  report retains Print, omits Share, and renders a single semantic quote pair around opening hooks.
+- Installed Worker secrets include OpenAI, Mistral, and a QA-only admin bypass; no Turnstile secret is
+  installed or enabled.
+- `pnpm audit --audit-level high` found no known vulnerabilities, and `wrangler check startup`
+  completed successfully.
 
 ## Remaining known limitations
 
-- Mistral fallback is implemented but unavailable until a Mistral key is configured.
+- Mistral fallback is configured and live-tested, but has not yet been naturally selected by a fresh
+  production report because Cloudflare remained the successful primary provider in the tested path.
 - Some real sites block or challenge server-side ingestion; ten production jobs ended with
   `WEBSITE_UNAVAILABLE`. The paste-context continuation is the supported recovery path.
 - Cloudflare structured generation is variable, so conservative deterministic enrichment is still
