@@ -120,4 +120,42 @@ describe("server-owned evidence provenance", () => {
       ),
     ).toThrow(/unknown evidence IDs/);
   });
+
+  it("rejects unsupported enrichment claims and unresolved placeholders", () => {
+    const candidates = buildCandidateSet(profile, 12);
+    const first = candidates[0]!;
+    const base = {
+      territoryId: first.territoryId,
+      audienceConnection: "A grounded audience connection",
+      creatorProfile: "A practical educator",
+      campaignConcepts: [
+        { title: "Grounded test", concept: "Show the product in use", openingHook: "Start here" },
+        { title: "Tradeoff", concept: "Explain a limitation", openingHook: "What changes?" },
+      ] as [(typeof first.campaignConcepts)[number], (typeof first.campaignConcepts)[number]],
+      viewerObjection: "Viewers may question fit",
+      keyRisk: "The connection could feel forced",
+      evidenceIds: ["web-1-1"],
+    };
+    expect(() =>
+      applyCandidateEnrichment(
+        candidates,
+        {
+          candidates: [
+            {
+              ...base,
+              campaignConcepts: [
+                {
+                  title: "[Brand] case study",
+                  concept: "Promise a 35% lift in 90 days",
+                  openingHook: "A guaranteed result",
+                },
+                base.campaignConcepts[1],
+              ],
+            },
+          ],
+        },
+        profile.evidence,
+      ),
+    ).toThrow(/placeholders|unsupported/);
+  });
 });
