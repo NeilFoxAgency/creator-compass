@@ -17,4 +17,3 @@ CreatorCompass builds a compact set containing strong matches plus deliberately 
 `gpt-5.6-luna` receives only the structured profile, readiness results, candidates, evidence IDs, unknowns, and scores. A strict Responses API JSON schema requires exactly eight classified choices plus one North Star. Deterministic postflight checks require unique known IDs and exact 3 Core / 2 Adjacent / 1 Experimental / 2 Risk counts.
 
 No hidden chain-of-thought is requested or displayed. The report shows concise rationale, evidence, assumptions, confidence, and methodology.
-

@@ -8,4 +8,3 @@ describe("creator territory taxonomy", () => {
     expect(new Set(creatorTerritories.map((item) => item.id)).size).toBe(creatorTerritories.length);
   });
 });
-

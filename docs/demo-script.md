@@ -20,4 +20,3 @@ Codex built and iterated on ingestion, scoring, provider routing, UI, tests, and
 
 **2:45–3:00 — Impact**  
 CreatorCompass does not bury brands in creator data. It gives them a direction they can understand, test, and act on. End on the report and Neil Fox Agency attribution.
-

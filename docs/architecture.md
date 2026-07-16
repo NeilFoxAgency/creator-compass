@@ -18,4 +18,3 @@ Website failure becomes `needs-input`; the user may paste a description. Extract
 ## Security invariants
 
 Every URL and redirect is revalidated. Only HTTP(S), standard ports, bounded HTML responses, and a small page count are allowed. Model outputs are Zod-validated before entering product state. Public creation is rate-limited and deduplicated. Reports contain no lead contact data.
-

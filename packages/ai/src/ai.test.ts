@@ -5,12 +5,36 @@ import { CloudflareProvider, generateWithFallback, type StructuredModelProvider 
 describe("provider fallback", () => {
   it("moves to the next provider without repeating an identical schema failure", async () => {
     let attempts = 0;
-    const broken: StructuredModelProvider = { name: "cloudflare", generate: async () => { attempts += 1; throw new Error("schema rejected"); } };
+    const broken: StructuredModelProvider = {
+      name: "cloudflare",
+      generate: async () => {
+        attempts += 1;
+        throw new Error("schema rejected");
+      },
+    };
     const fallback: StructuredModelProvider = {
       name: "mistral",
-      generate: async (request) => ({ data: request.schema.parse({ ok: true }), provider: "mistral", model: "mock", latencyMs: 1, inputUnits: 1, outputUnits: 1, retryCount: 0, schemaValid: true, promptVersion: request.promptVersion }),
+      generate: async (request) => ({
+        data: request.schema.parse({ ok: true }),
+        provider: "mistral",
+        model: "mock",
+        latencyMs: 1,
+        inputUnits: 1,
+        outputUnits: 1,
+        retryCount: 0,
+        schemaValid: true,
+        promptVersion: request.promptVersion,
+      }),
     };
-    const result = await generateWithFallback([broken, fallback], { task: "brand-extraction", schema: z.object({ ok: z.boolean() }), input: {}, system: "test", maxOutputTokens: 10, temperature: 0, promptVersion: "v1" });
+    const result = await generateWithFallback([broken, fallback], {
+      task: "brand-extraction",
+      schema: z.object({ ok: z.boolean() }),
+      input: {},
+      system: "test",
+      maxOutputTokens: 10,
+      temperature: 0,
+      promptVersion: "v1",
+    });
     expect(result.data.ok).toBe(true);
     expect(result.fallbackReason).toContain("cloudflare");
     expect(attempts).toBe(1);
@@ -25,24 +49,55 @@ describe("Cloudflare structured responses", () => {
     const provider = new CloudflareProvider({
       run: async (_model, input) => {
         request = input;
-        return { response: { brandName: "Fox & Co", evidenceIds: ["web-1-1"] }, usage: { prompt_tokens: 231, completion_tokens: 47 } };
+        return {
+          response: { brandName: "Fox & Co", evidenceIds: ["web-1-1"] },
+          usage: { prompt_tokens: 231, completion_tokens: 47 },
+        };
       },
     });
-    const result = await provider.generate({ task: "brand-extraction", schema, input: {}, system: "Extract", maxOutputTokens: 200, temperature: 0, promptVersion: "brand-v2" });
-    expect(request?.response_format).toMatchObject({ type: "json_schema", json_schema: { type: "object" } });
+    const result = await provider.generate({
+      task: "brand-extraction",
+      schema,
+      input: {},
+      system: "Extract",
+      maxOutputTokens: 200,
+      temperature: 0,
+      promptVersion: "brand-v2",
+    });
+    expect(request?.response_format).toMatchObject({
+      type: "json_schema",
+      json_schema: { type: "object" },
+    });
     expect(result.data.brandName).toBe("Fox & Co");
     expect(result.inputUnits).toBe(231);
     expect(result.outputUnits).toBe(47);
   });
 
   it("parses a realistic GPT-OSS chat-completion envelope", async () => {
-    const provider = new CloudflareProvider({
-      run: async () => ({
-        choices: [{ message: { content: "```json\n{\"brandName\":\"Compass Labs\",\"evidenceIds\":[\"web-2-1\"]}\n```" } }],
-        usage: { prompt_tokens: 410, completion_tokens: 61 },
-      }),
-    }, "@cf/openai/gpt-oss-20b");
-    const result = await provider.generate({ task: "brand-extraction", schema, input: {}, system: "Extract", maxOutputTokens: 200, temperature: 0, promptVersion: "brand-v2" });
+    const provider = new CloudflareProvider(
+      {
+        run: async () => ({
+          choices: [
+            {
+              message: {
+                content: '```json\n{"brandName":"Compass Labs","evidenceIds":["web-2-1"]}\n```',
+              },
+            },
+          ],
+          usage: { prompt_tokens: 410, completion_tokens: 61 },
+        }),
+      },
+      "@cf/openai/gpt-oss-20b",
+    );
+    const result = await provider.generate({
+      task: "brand-extraction",
+      schema,
+      input: {},
+      system: "Extract",
+      maxOutputTokens: 200,
+      temperature: 0,
+      promptVersion: "brand-v2",
+    });
     expect(result.data).toEqual({ brandName: "Compass Labs", evidenceIds: ["web-2-1"] });
     expect(result.outputUnits).toBe(61);
   });

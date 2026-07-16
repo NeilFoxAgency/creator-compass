@@ -7,4 +7,3 @@ services:
     envVars:
       - key: YTDLP_SHARED_SECRET
         generateValue: true
-

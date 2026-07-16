@@ -11,7 +11,7 @@
     "directory": "./apps/web/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*"],
   },
   "ai": { "binding": "AI", "remote": true },
   "d1_databases": [
@@ -19,12 +19,10 @@
       "binding": "DB",
       "database_name": "creator-compass",
       "database_id": "2401e23a-bff5-4424-9651-7d62b303efc1",
-      "migrations_dir": "migrations"
-    }
+      "migrations_dir": "migrations",
+    },
   ],
-  "kv_namespaces": [
-    { "binding": "REPORT_CACHE", "id": "7bdfb682f64a4132aec07edfd62dd24b" }
-  ],
+  "kv_namespaces": [{ "binding": "REPORT_CACHE", "id": "7bdfb682f64a4132aec07edfd62dd24b" }],
   "queues": {
     "producers": [{ "binding": "ANALYSIS_QUEUE", "queue": "creator-compass-analysis" }],
     "consumers": [
@@ -34,9 +32,9 @@
         "max_batch_timeout": 2,
         "max_retries": 2,
         "dead_letter_queue": "creator-compass-analysis-dlq",
-        "max_concurrency": 3
-      }
-    ]
+        "max_concurrency": 3,
+      },
+    ],
   },
   "vars": {
     "ENVIRONMENT": "production",
@@ -47,6 +45,6 @@
     "CLOUDFLARE_REVIEW_MODEL": "@cf/openai/gpt-oss-20b",
     "CLOUDFLARE_EMBEDDING_MODEL": "@cf/qwen/qwen3-embedding-0.6b",
     "MISTRAL_MODEL": "mistral-small-2603",
-    "REPORT_CACHE_TTL_DAYS": "30"
-  }
+    "REPORT_CACHE_TTL_DAYS": "30",
+  },
 }

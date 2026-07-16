@@ -4,4 +4,3 @@
   "include": ["src"],
   "references": [{ "path": "../contracts" }, { "path": "../taxonomy" }]
 }
-

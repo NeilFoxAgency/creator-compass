@@ -2,20 +2,20 @@
 
 Audited against the official rules on July 16, 2026.
 
-| Requirement | CreatorCompass evidence | Status |
-|---|---|---|
-| Built with Codex and GPT-5.6 | Dated collaboration log; GPT-5.6 Luna Responses adapter; model-use explanation in README | Ready |
-| One eligible category | Work & Productivity | Ready |
-| Working, consistently runnable project | [Hosted Cloudflare app](https://creatorcompass.neilfoxagency.com/), local setup, test suite, deterministic fixture path | Ready |
-| Project description | Draft in `docs/submission-checklist.md` | Ready |
-| Public or judge-shared repository with licensing | MIT license and [public GitHub repository](https://github.com/NeilFoxAgency/creator-compass) | Ready |
-| README setup and testing guidance | Root README | Ready |
-| Sample data if needed | `fixtures/` plus 12-case evaluation output | Ready |
-| Codex collaboration and human decisions | README and `docs/codex-collaboration.md` | Ready |
-| Free working access through judging | [Public hosted demo](https://creatorcompass.neilfoxagency.com/) with no account requirement | Ready; monitor through judging |
-| Public YouTube demo under three minutes | English audio script in `docs/demo-script.md` | Recording pending |
-| `/feedback` Session ID | Submission checklist placeholder | Pending user command |
-| English submission materials | Repository documentation and planned video are English | Ready |
+| Requirement                                      | CreatorCompass evidence                                                                                                 | Status                         |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Built with Codex and GPT-5.6                     | Dated collaboration log; GPT-5.6 Luna Responses adapter; model-use explanation in README                                | Ready                          |
+| One eligible category                            | Work & Productivity                                                                                                     | Ready                          |
+| Working, consistently runnable project           | [Hosted Cloudflare app](https://creatorcompass.neilfoxagency.com/), local setup, test suite, deterministic fixture path | Ready                          |
+| Project description                              | Draft in `docs/submission-checklist.md`                                                                                 | Ready                          |
+| Public or judge-shared repository with licensing | MIT license and [public GitHub repository](https://github.com/NeilFoxAgency/creator-compass)                            | Ready                          |
+| README setup and testing guidance                | Root README                                                                                                             | Ready                          |
+| Sample data if needed                            | `fixtures/` plus 12-case evaluation output                                                                              | Ready                          |
+| Codex collaboration and human decisions          | README and `docs/codex-collaboration.md`                                                                                | Ready                          |
+| Free working access through judging              | [Public hosted demo](https://creatorcompass.neilfoxagency.com/) with no account requirement                             | Ready; monitor through judging |
+| Public YouTube demo under three minutes          | English audio script in `docs/demo-script.md`                                                                           | Recording pending              |
+| `/feedback` Session ID                           | Submission checklist placeholder                                                                                        | Pending user command           |
+| English submission materials                     | Repository documentation and planned video are English                                                                  | Ready                          |
 
 ## Judging alignment
 
