@@ -1,6 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { CloudflareProvider, generateWithFallback, type StructuredModelProvider } from "./index";
+import {
+  CloudflareProvider,
+  MistralProvider,
+  generateWithFallback,
+  type StructuredModelProvider,
+} from "./index";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("provider fallback", () => {
   it("moves to the next provider without repeating an identical schema failure", async () => {
@@ -125,5 +132,48 @@ describe("Cloudflare structured responses", () => {
       promptVersion: "brand-v2",
     });
     expect(result.data.brandName).toBe("Choice fallback");
+  });
+});
+
+describe("Mistral structured responses", () => {
+  it("uses Mistral Small 4 and parses a schema-valid chat completion", async () => {
+    let requestBody: Record<string, unknown> | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return new Response(
+          JSON.stringify({
+            id: "mistral-test-1",
+            choices: [
+              { message: { content: '{"brandName":"Compass Test","evidenceIds":["test-1"]}' } },
+            ],
+            usage: { prompt_tokens: 72, completion_tokens: 21 },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }),
+    );
+    const provider = new MistralProvider("test-key");
+    const result = await provider.generate({
+      task: "brand-extraction",
+      schema: z.object({ brandName: z.string(), evidenceIds: z.array(z.string()) }),
+      input: { evidence: [{ id: "test-1", excerpt: "Compass Test is a planning tool." }] },
+      system: "Extract only supported facts.",
+      maxOutputTokens: 120,
+      temperature: 0,
+      promptVersion: "mistral-smoke-v1",
+    });
+    expect(requestBody).toMatchObject({
+      model: "mistral-small-2603+1",
+      response_format: { type: "json_object" },
+    });
+    expect(result).toMatchObject({
+      provider: "mistral",
+      model: "mistral-small-2603+1",
+      inputUnits: 72,
+      outputUnits: 21,
+      data: { brandName: "Compass Test", evidenceIds: ["test-1"] },
+    });
   });
 });

@@ -37,6 +37,12 @@ import {
 } from "./ingestion";
 import { exploreChannels } from "./youtube";
 
+declare global {
+  interface SubtleCrypto {
+    timingSafeEqual(a: ArrayBuffer | ArrayBufferView, b: ArrayBuffer | ArrayBufferView): boolean;
+  }
+}
+
 type QueueMessage = { analysisId: string };
 
 export type Env = {
@@ -109,11 +115,27 @@ const jsonError = (
   status: 400 | 401 | 404 | 409 | 413 | 429 | 500 | 503 = 400,
 ) => Response.json({ error: { code, message } }, { status });
 
+async function secureEqual(provided: string | undefined, expected: string | undefined) {
+  if (!provided || !expected) return false;
+  const encoder = new TextEncoder();
+  const [providedHash, expectedHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(provided)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
+  ]);
+  return crypto.subtle.timingSafeEqual(providedHash, expectedHash);
+}
+
 const extractedBrandSchema = brandProfileSchema
   .omit({ canonicalDomain: true, evidence: true })
   .extend({
     evidenceIds: z.array(z.string()).min(1),
   });
+
+const mistralSmokeSchema = z.object({
+  brandName: z.literal("CreatorCompass Test Brand"),
+  audience: z.string().min(8),
+  evidenceIds: z.array(z.literal("test-1")).length(1),
+});
 
 const injectionPattern =
   /(?:ignore|disregard|override)\s+(?:all\s+)?(?:previous|prior|system|developer)\s+(?:instructions?|messages?|prompts?)|\b(?:system|developer|assistant)\s*(?:message|prompt)\s*:/i;
@@ -744,9 +766,10 @@ app.post("/api/analyses", async (c) => {
     );
   const input = parsed.data;
   const ip = c.req.header("cf-connecting-ip") ?? "unknown";
-  const adminBypass =
-    c.env.ADMIN_BYPASS_SECRET &&
-    c.req.header("x-creator-compass-admin") === c.env.ADMIN_BYPASS_SECRET;
+  const adminBypass = await secureEqual(
+    c.req.header("x-creator-compass-admin"),
+    c.env.ADMIN_BYPASS_SECRET,
+  );
   if (!adminBypass && !(await verifyTurnstile(input.turnstileToken, c.env, ip)))
     return jsonError("Please complete the bot check and try again.", "TURNSTILE_FAILED", 401);
   const fp = await fingerprint(input);
@@ -919,10 +942,63 @@ app.post("/api/leads", async (c) => {
   return c.json({ ok: true }, 201);
 });
 
+app.post("/api/admin/provider-test/mistral", async (c) => {
+  if (
+    !(await secureEqual(
+      c.req.header("authorization"),
+      c.env.ADMIN_BYPASS_SECRET ? `Bearer ${c.env.ADMIN_BYPASS_SECRET}` : undefined,
+    ))
+  )
+    return jsonError("Not authorized.", "UNAUTHORIZED", 401);
+  if (!c.env.MISTRAL_API_KEY)
+    return jsonError("Mistral is not configured.", "PROVIDER_UNAVAILABLE", 503);
+  try {
+    const result = await new MistralProvider(c.env.MISTRAL_API_KEY, c.env.MISTRAL_MODEL).generate({
+      task: "brand-extraction",
+      schema: mistralSmokeSchema,
+      input: {
+        evidence: [
+          {
+            id: "test-1",
+            excerpt:
+              "CreatorCompass Test Brand helps brand strategists choose evidence-backed creator campaign directions.",
+          },
+        ],
+      },
+      system:
+        "Extract the brand name, intended audience, and supplied evidence ID. Use only the evidence provided.",
+      maxOutputTokens: 160,
+      temperature: 0,
+      promptVersion: "mistral-smoke-v1",
+    });
+    await recordUsage(c.env, result, "mistral", "provider-smoke-test");
+    return c.json({
+      ok: true,
+      provider: result.provider,
+      model: result.model,
+      latencyMs: result.latencyMs,
+      usage: { inputUnits: result.inputUnits, outputUnits: result.outputUnits },
+      schemaValid: result.schemaValid,
+      sample: result.data,
+    });
+  } catch (error) {
+    await recordUsage(c.env, null, "mistral", "provider-smoke-test", true);
+    console.error(
+      JSON.stringify({
+        event: "mistral_provider_smoke_test_failed",
+        reason: error instanceof Error ? error.message : "unknown",
+      }),
+    );
+    return jsonError("Mistral provider test failed.", "PROVIDER_TEST_FAILED", 503);
+  }
+});
+
 app.get("/api/admin/diagnostics", async (c) => {
   if (
-    !c.env.ADMIN_BYPASS_SECRET ||
-    c.req.header("authorization") !== `Bearer ${c.env.ADMIN_BYPASS_SECRET}`
+    !(await secureEqual(
+      c.req.header("authorization"),
+      c.env.ADMIN_BYPASS_SECRET ? `Bearer ${c.env.ADMIN_BYPASS_SECRET}` : undefined,
+    ))
   )
     return jsonError("Not authorized.", "UNAUTHORIZED", 401);
   const [reports, usage, failures, duration] = await Promise.all([

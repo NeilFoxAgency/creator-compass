@@ -112,7 +112,7 @@ export class MistralProvider implements StructuredModelProvider {
   readonly name = "mistral" as const;
   constructor(
     private readonly apiKey: string,
-    private readonly model = "mistral-small-2603",
+    private readonly model = "mistral-small-2603+1",
   ) {}
 
   async generate<T>(request: StructuredGenerationRequest<T>): Promise<ModelResult<T>> {
