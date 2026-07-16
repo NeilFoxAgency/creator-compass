@@ -4,14 +4,14 @@ import { assembleDeterministicReport } from "@creator-compass/scoring";
 const profile: BrandProfile = {
   canonicalDomain: "neilfoxagency.com",
   brandName: "Neil Fox Agency",
-  summary: "Neil Fox Agency helps brands and YouTube creators build credible sponsorship programs through focused strategy, outreach, negotiation, and campaign coordination.",
+  summary: "Neil Fox Agency is a creator-business and marketing-education partner helping brands and YouTube creators build credible sponsorship programs through focused strategy, outreach, negotiation, and campaign coordination.",
   products: [
-    { name: "Creator sponsorship strategy", category: "marketing service" },
-    { name: "Campaign coordination", category: "agency service" },
+    { name: "Creator sponsorship strategy", category: "creator business and marketing education" },
+    { name: "Campaign coordination", category: "video production sponsorship workflow" },
   ],
-  targetCustomers: ["consumer brands beginning creator sponsorships", "YouTube creators building sponsor readiness"],
-  customerNeeds: ["choose a credible creator direction", "coordinate sponsorship work without guesswork"],
-  differentiators: ["YouTube sponsorship specialization", "evidence-led direction before creator selection"],
+  targetCustomers: ["consumer-brand marketing teams beginning creator sponsorships", "YouTube creator businesses building sponsor readiness"],
+  customerNeeds: ["choose a credible creator direction", "coordinate video-production sponsorships without guesswork"],
+  differentiators: ["creator-business and marketing-education specialization", "practical systems for remote-work and entrepreneurship teams"],
   pricePositioning: "unknown",
   purchaseFriction: "high",
   demonstrability: "mixed",
@@ -28,5 +28,4 @@ const profile: BrandProfile = {
 };
 
 export const sampleReport = assembleDeterministicReport(profile, { id: "sample-neil-fox-agency", slug: "sample-neil-fox-agency", now: new Date("2026-07-16T14:00:00.000Z") });
-sampleReport.aiReview = { usedGpt56: true, model: "gpt-5.6-luna", promptVersion: "review-v1", qualityFlag: "gpt56" };
-
+sampleReport.aiReview = { usedGpt56: false, model: "deterministic-fixture", promptVersion: "review-v1", qualityFlag: "deterministic-fallback" };

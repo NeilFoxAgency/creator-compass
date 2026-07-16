@@ -5,10 +5,12 @@
   "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "routes": [{ "pattern": "creatorcompass.neilfoxagency.com", "custom_domain": true }],
   "observability": { "enabled": true, "head_sampling_rate": 1 },
   "assets": {
     "directory": "./apps/web/dist",
     "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
   "ai": { "binding": "AI", "remote": true },
@@ -46,6 +48,5 @@
     "CLOUDFLARE_EMBEDDING_MODEL": "@cf/qwen/qwen3-embedding-0.6b",
     "MISTRAL_MODEL": "mistral-small-2603",
     "REPORT_CACHE_TTL_DAYS": "30"
-  },
-  "limits": { "cpu_ms": 300000 }
+  }
 }

@@ -14,4 +14,10 @@
 - **Codex contribution:** Mapped the project to the Work & Productivity track, expanded the README's collaboration and decision record, added self-contained sample fixtures and a compliance map, and prepared the licensed public repository.
 - **Neil's decision:** Pause deployment until the contest requirements were checked and the project files were present in a GitHub repository.
 
+## 2026-07-16 — Free-tier production deployment
+
+- **Task:** Deploy a free-access judge build after repository publication.
+- **Codex contribution:** Provisioned and migrated D1, KV, Queue and DLQ resources; deployed the Worker and static app; uploaded the OpenAI key as a secret; attached the custom domain; removed a paid-plan-only CPU setting; and verified a persisted GPT-5.6 Luna review.
+- **Verification:** The custom-domain health endpoint reports both Cloudflare AI and OpenAI available. The live verification report records `usedGpt56: true`, `model: gpt-5.6-luna`, exact 3/2/1/2 territory counts, and a persisted North Star.
+
 Update this log when a later material design, engineering, or ethical decision changes the product.

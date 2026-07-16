@@ -7,14 +7,14 @@
 - [x] Sample report
 - [x] Architecture, AI pipeline, evaluation, and collaboration docs
 - [x] Three-minute English voiceover script
-- [ ] Confirm public GitHub repository URL
-- [ ] Confirm hosted demo at `creatorcompass.neilfoxagency.com`
+- [x] Confirm public GitHub repository URL: `https://github.com/NeilFoxAgency/creator-compass`
+- [x] Confirm hosted demo at `https://creatorcompass.neilfoxagency.com`
 - [ ] Record three-minute-or-shorter demo
 - [ ] Upload public YouTube demo and record URL
 - [ ] Run `/feedback` in this primary task
 - [ ] Record `/feedback` Session ID: `________________`
 - [ ] Add final screenshots to submission
-- [ ] Verify live GPT-5.6 review with `usedGpt56: true`
+- [x] Verify live GPT-5.6 review with `usedGpt56: true`: `creator-compass-neilthenerd1-workers-dev-50da85df`
 - [ ] Confirm the hosted demo remains free and unrestricted through August 5, 2026
 - [ ] Confirm video contains no unlicensed music or third-party material
 - [ ] Submit before Tuesday, July 21, 2026 at 8:00 PM Eastern

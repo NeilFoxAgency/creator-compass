@@ -6,7 +6,9 @@ CreatorCompass turns one input—a brand website—into an evidence-backed creat
 
 **OpenAI Build Week track:** Work & Productivity  
 **Hackathon build window:** July 13–21, 2026  
-**Judge access:** The hosted demo URL will be added here after deployment; local and fixture-only test paths are documented below.
+**Source:** [github.com/NeilFoxAgency/creator-compass](https://github.com/NeilFoxAgency/creator-compass)  
+**Judge access:** [creatorcompass.neilfoxagency.com](https://creatorcompass.neilfoxagency.com/)  
+**Sample:** [deterministic Neil Fox Agency report](https://creatorcompass.neilfoxagency.com/reports/sample-neil-fox-agency) · [live GPT-5.6 verification report](https://creatorcompass.neilfoxagency.com/reports/creator-compass-neilthenerd1-workers-dev-50da85df)
 
 ## What the working MVP does
 
@@ -68,6 +70,8 @@ pnpm eval
 ```
 
 Sample inputs live in [`fixtures/`](fixtures/). The evaluation suite uses twelve human-authored brand profiles, including regulated, local-service, multi-category, and insufficient-evidence cases. No API key is required for the deterministic test and evaluation path.
+
+The bundled sample report is deliberately labeled as a deterministic fixture. The separate live verification report records `usedGpt56: true` and `model: gpt-5.6-luna` in the persisted report metadata.
 
 ## Environment variables
 
