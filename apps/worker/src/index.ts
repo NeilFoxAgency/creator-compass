@@ -162,7 +162,14 @@ function assertGroundedEnrichment(
     .filter((token) => !citedText.toLowerCase().includes(token));
   if (unsupportedNumbers.length)
     throw new Error(`Model returned unsupported numeric claims: ${unsupportedNumbers.join(", ")}`);
-  for (const claim of ["peer-reviewed", "certified", "verified", "proven", "guaranteed"]) {
+  for (const claim of [
+    "peer-reviewed",
+    "certified",
+    "verified",
+    "proven",
+    "proving",
+    "guaranteed",
+  ]) {
     if (modelText.toLowerCase().includes(claim) && !citedText.toLowerCase().includes(claim))
       throw new Error(`Model returned an unsupported claim: ${claim}`);
   }

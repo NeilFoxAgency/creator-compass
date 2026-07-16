@@ -383,7 +383,7 @@ function recommendation(
     campaignConcepts: [
       {
         title: `${product}: ${format}`,
-        concept: `Create a ${format} that places ${product} in a ${territory.name.toLowerCase()} moment for viewers motivated by ${motivation}, answering ${need} and stating one limitation.`,
+        concept: `Create ${format} content showing how ${product} supports ${need} for ${territory.name.toLowerCase()} viewers motivated by ${motivation}; include one limitation.`,
         openingHook: `“For ${territory.name.toLowerCase()} viewers looking for ${need}, here is the tradeoff I would check first.”`,
       },
       {
