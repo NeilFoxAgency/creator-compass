@@ -31,6 +31,13 @@ export interface StructuredModelProvider {
   generate<T>(request: StructuredGenerationRequest<T>): Promise<ModelResult<T>>;
 }
 
+export type ProviderAttempt<T> = {
+  provider: StructuredModelProvider["name"];
+  succeeded: boolean;
+  result?: ModelResult<T>;
+  reason?: string;
+};
+
 type AiBinding = {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;
 };
@@ -43,7 +50,21 @@ function parseCandidate<T>(schema: z.ZodType<T>, value: unknown): T {
   if (value && typeof value === "object" && "response" in value) {
     return parseCandidate(schema, (value as { response: unknown }).response);
   }
+  if (value && typeof value === "object" && "choices" in value) {
+    const content = (value as { choices?: Array<{ message?: { content?: unknown } }> }).choices?.[0]?.message?.content;
+    return parseCandidate(schema, content);
+  }
   return schema.parse(value);
+}
+
+function usageFrom(value: unknown) {
+  if (!value || typeof value !== "object" || !("usage" in value)) return { inputUnits: 0, outputUnits: 0 };
+  const usage = (value as { usage?: Record<string, unknown> }).usage ?? {};
+  const number = (candidate: unknown) => typeof candidate === "number" && Number.isFinite(candidate) ? candidate : 0;
+  return {
+    inputUnits: number(usage.prompt_tokens ?? usage.input_tokens),
+    outputUnits: number(usage.completion_tokens ?? usage.output_tokens),
+  };
 }
 
 export class CloudflareProvider implements StructuredModelProvider {
@@ -52,6 +73,7 @@ export class CloudflareProvider implements StructuredModelProvider {
 
   async generate<T>(request: StructuredGenerationRequest<T>): Promise<ModelResult<T>> {
     const started = Date.now();
+    const jsonSchema = z.toJSONSchema(request.schema, { target: "draft-7" });
     const response = await this.ai.run(this.model, {
       messages: [
         { role: "system", content: `${request.system}\nReturn only JSON matching the supplied contract. Never invent evidence.` },
@@ -59,14 +81,16 @@ export class CloudflareProvider implements StructuredModelProvider {
       ],
       max_tokens: request.maxOutputTokens,
       temperature: request.temperature,
+      response_format: { type: "json_schema", json_schema: jsonSchema },
     });
+    const usage = usageFrom(response);
     return {
       data: parseCandidate(request.schema, response),
       provider: this.name,
       model: this.model,
       latencyMs: Date.now() - started,
-      inputUnits: 0,
-      outputUnits: 0,
+      inputUnits: usage.inputUnits,
+      outputUnits: usage.outputUnits,
       retryCount: 0,
       schemaValid: true,
       promptVersion: request.promptVersion,
@@ -169,18 +193,22 @@ export class OpenAIProvider implements StructuredModelProvider {
   }
 }
 
-export async function generateWithFallback<T>(providers: StructuredModelProvider[], request: StructuredGenerationRequest<T>): Promise<ModelResult<T>> {
+export async function generateWithFallback<T>(
+  providers: StructuredModelProvider[],
+  request: StructuredGenerationRequest<T>,
+  onAttempt?: (attempt: ProviderAttempt<T>) => void | Promise<void>,
+): Promise<ModelResult<T>> {
   const failures: string[] = [];
   for (const provider of providers) {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const result = await provider.generate(request);
-        return { ...result, retryCount: attempt, ...(failures.length ? { fallbackReason: failures.join("; ") } : {}) };
-      } catch (error) {
-        failures.push(`${provider.name}:${error instanceof Error ? error.message : "unknown failure"}`);
-      }
+    try {
+      const result = await provider.generate(request);
+      await onAttempt?.({ provider: provider.name, succeeded: true, result });
+      return { ...result, retryCount: 0, ...(failures.length ? { fallbackReason: failures.join("; ") } : {}) };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "unknown failure";
+      failures.push(`${provider.name}:${reason}`);
+      await onAttempt?.({ provider: provider.name, succeeded: false, reason });
     }
   }
   throw new Error(`All model providers failed: ${failures.join("; ")}`);
 }
-
