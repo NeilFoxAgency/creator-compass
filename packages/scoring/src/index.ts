@@ -424,7 +424,9 @@ export function hasSufficientEvidence(profile: BrandProfile) {
   const categoryCount = new Set(profile.products.map((item) => item.category.toLowerCase())).size;
   const vagueAudience =
     !profile.targetCustomers.length ||
-    profile.targetCustomers.every((item) => /^(people|everyone|consumers?|buyers?)\b/i.test(item));
+    profile.targetCustomers.every((item) =>
+      /^(people|everyone|consumers?|buyers?)$/i.test(item.trim()),
+    );
   const broadMultiCategory =
     /\b(wide range|all categories|everything for everyone|multi-category)\b/i.test(
       profile.summary,
