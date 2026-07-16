@@ -306,7 +306,9 @@ function applyReview(
     throw new Error("The strategic review returned an invalid portfolio.");
   const candidateMap = new Map(candidates.map((candidate) => [candidate.territoryId, candidate]));
   const northCandidate = candidateMap.get(review.northStarTerritoryId)!;
-  const invalidFormat = /^(?:object|unknown|not applicable|you must\b)/i.test(review.format.trim());
+  const invalidFormat = /^(?:invalid\b|object|unknown|not applicable|you must\b)/i.test(
+    review.format.trim(),
+  );
   report.territories = review.portfolio.map((item) => ({
     ...candidateMap.get(item.territoryId)!,
     classification: item.classification,
