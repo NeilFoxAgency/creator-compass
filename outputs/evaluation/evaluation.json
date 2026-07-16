@@ -1,0 +1,223 @@
+{
+  "generatedAt": "2026-07-16T19:32:20.696Z",
+  "methodology": "2026.07.1",
+  "passed": true,
+  "cases": [
+    {
+      "case": "TrailKind",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "outdoor-recreation",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "DailyTable",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "cooking-and-meal-preparation",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "Main Street HVAC",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "home-improvement",
+      "readinessStatus": "promising"
+    },
+    {
+      "case": "ClearClaim",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "wellness-routines",
+      "readinessStatus": "promising"
+    },
+    {
+      "case": "QuietDesk",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "productivity-systems",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "GlowTheory",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "skincare-education",
+      "readinessStatus": "promising"
+    },
+    {
+      "case": "PawRoutine",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "pet-care",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "CourseCraft",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "career-development",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "LoopBottle",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "sustainable-living",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "PixelForge",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "miniature-painting",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "ManyThings",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "pet-care",
+      "readinessStatus": "ready"
+    },
+    {
+      "case": "SparseBrand",
+      "passed": true,
+      "schemaValid": true,
+      "uniqueTerritories": true,
+      "evidenceCoverage": true,
+      "prohibitedClaims": false,
+      "plausibleCore": true,
+      "readinessExpected": true,
+      "classCounts": {
+        "core": 3,
+        "adjacent": 2,
+        "experimental": 1,
+        "risk": 2
+      },
+      "northStar": "accessibility-and-adaptive-living",
+      "readinessStatus": "insufficient-evidence"
+    }
+  ]
+}

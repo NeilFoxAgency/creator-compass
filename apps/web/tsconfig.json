@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "outDir": "dist-ts", "jsx": "react-jsx", "noEmit": true },
+  "include": ["src", "vite.config.ts"],
+  "references": [{ "path": "../../packages/contracts" }, { "path": "../../packages/scoring" }]
+}
+

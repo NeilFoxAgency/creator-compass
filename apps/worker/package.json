@@ -1,0 +1,15 @@
+{
+  "name": "@creator-compass/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@creator-compass/ai": "workspace:*",
+    "@creator-compass/contracts": "workspace:*",
+    "@creator-compass/scoring": "workspace:*",
+    "@creator-compass/taxonomy": "workspace:*",
+    "hono": "latest",
+    "zod": "latest"
+  }
+}
+

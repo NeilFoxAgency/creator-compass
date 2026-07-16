@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: creator-compass-youtube-fallback
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: YTDLP_SHARED_SECRET
+        generateValue: true
+

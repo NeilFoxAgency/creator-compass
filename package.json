@@ -1,0 +1,38 @@
+{
+  "name": "creator-compass",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "build": "pnpm --filter @creator-compass/web build",
+    "check": "pnpm typecheck && pnpm test && pnpm format:check && pnpm deploy:dry-run",
+    "dev": "pnpm --filter @creator-compass/web build && wrangler dev",
+    "dev:web": "pnpm --filter @creator-compass/web dev",
+    "deploy": "pnpm build && wrangler deploy",
+    "deploy:dry-run": "pnpm build && wrangler deploy --dry-run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b",
+    "types": "wrangler types",
+    "eval": "tsx scripts/evaluate.ts",
+    "diagnostics": "wrangler d1 execute creator-compass --remote --command=\"SELECT provider, task, SUM(calls) calls FROM provider_usage GROUP BY provider, task;\""
+  },
+  "dependencies": {
+    "@creator-compass/contracts": "workspace:*",
+    "@creator-compass/scoring": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "latest",
+    "@cloudflare/workers-types": "latest",
+    "@types/node": "latest",
+    "prettier": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest",
+    "wrangler": "latest"
+  }
+}

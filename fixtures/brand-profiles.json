@@ -1,0 +1,31 @@
+[
+  {
+    "name": "TrailKind",
+    "website": "https://trailkind.example",
+    "category": "outdoor recreation",
+    "summary": "Durable, repairable camping equipment for weekend hikers.",
+    "expectedTerritories": ["outdoor-recreation", "camping"]
+  },
+  {
+    "name": "Main Street HVAC",
+    "website": "https://main-street-hvac.example",
+    "category": "local service",
+    "summary": "Residential heating and cooling installation for homeowners.",
+    "expectedTerritories": ["home-improvement", "local-discovery"]
+  },
+  {
+    "name": "ClearClaim",
+    "website": "https://clearclaim.example",
+    "category": "wellness supplement",
+    "summary": "A dietary supplement positioned around energy support.",
+    "riskTags": ["medical claims"],
+    "expectedTerritories": ["wellness-routines", "fitness-education"]
+  },
+  {
+    "name": "SparseBrand",
+    "website": "https://sparse.example",
+    "category": "unknown",
+    "summary": "A new brand.",
+    "expectedStatus": "insufficient-evidence"
+  }
+]

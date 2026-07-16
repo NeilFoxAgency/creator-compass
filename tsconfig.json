@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/contracts" },
+    { "path": "packages/taxonomy" },
+    { "path": "packages/scoring" },
+    { "path": "packages/ai" },
+    { "path": "apps/web" },
+    { "path": "apps/worker" }
+  ]
+}
+

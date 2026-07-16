@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "composite": true, "outDir": "dist", "rootDir": "src", "types": ["@cloudflare/workers-types"] },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/contracts" },
+    { "path": "../../packages/taxonomy" },
+    { "path": "../../packages/scoring" },
+    { "path": "../../packages/ai" }
+  ]
+}
+
