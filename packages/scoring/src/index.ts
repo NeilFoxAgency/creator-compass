@@ -421,9 +421,15 @@ export function selectPortfolio(profile: BrandProfile): TerritoryRecommendation[
 }
 
 export function hasSufficientEvidence(profile: BrandProfile) {
+  const categoryCount = new Set(profile.products.map((item) => item.category.toLowerCase())).size;
+  const vagueAudience =
+    !profile.targetCustomers.length ||
+    profile.targetCustomers.every((item) => /^(people|everyone|consumers?|buyers?)\b/i.test(item));
   const broadMultiCategory =
-    new Set(profile.products.map((item) => item.category.toLowerCase())).size >= 4 ||
-    /\b(wide range|all categories|everything for everyone|multi-category)\b/i.test(profile.summary);
+    /\b(wide range|all categories|everything for everyone|multi-category)\b/i.test(
+      profile.summary,
+    ) ||
+    (categoryCount >= 4 && (vagueAudience || !profile.customerNeeds.length));
   return (
     profile.evidence.length >= 2 &&
     profile.summary.trim().length >= 40 &&
