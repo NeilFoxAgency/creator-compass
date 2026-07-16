@@ -11,6 +11,7 @@
 Please report security vulnerabilities to **neil@neilfoxagency.com**.
 
 Include:
+
 - Description of the issue
 - Steps to reproduce
 - Potential impact

@@ -7,7 +7,7 @@ CreatorCompass turns one input—a brand website—into an evidence-backed creat
 **OpenAI Build Week track:** Work & Productivity  
 **Hackathon build window:** July 13–21, 2026  
 **Source:** [github.com/NeilFoxAgency/creator-compass](https://github.com/NeilFoxAgency/creator-compass)  
-**Live Demo:** [creatorcompass.neilfoxagency.com](https://creatorcompass.neilfoxagency.com/)  
+**Live Demo:** [creatorcompass.neilfoxagency.com](https://creatorcompass.neilfoxagency.com/)
 
 ## Quick Start
 
