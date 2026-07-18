@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@creator-compass/contracts": "workspace:*",
-    "@creator-compass/scoring": "workspace:*"
+    "@creator-compass/scoring": "workspace:*",
+    "@creator-compass/utm-builder": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "latest",
