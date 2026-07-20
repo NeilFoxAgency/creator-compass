@@ -713,7 +713,7 @@ function Report({ report }: { report: CreatorCompassReport }) {
             )}
           </section>
         )}
-        <section className="readiness">
+        <section className="readiness" id="readiness">
           <div className="readiness-summary">
             <span className="section-number">02 — SPONSORSHIP READINESS</span>
             <h2
