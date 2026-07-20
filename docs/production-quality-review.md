@@ -4,7 +4,7 @@
 
 Production: <https://creatorcompass.neilfoxagency.com>  
 Methodology: `2026.07.3`  
-Reviewed deployment: `0ed7ac46-c673-442d-ba27-7165d1940bc3`  
+Reviewed deployment: `db53246b-0fd8-4fdb-80a5-93f02ec81e0a`  
 Fresh OpenSEO report: <https://creatorcompass.neilfoxagency.com/reports/openseo-so-012fe0bb>
 
 ### Root causes and correction
@@ -63,15 +63,15 @@ The cumulative production diagnostics captured on 2026-07-20 UTC were:
 
 | Provider      | Task                 | Calls | Failures | Successes / uses |
 | ------------- | -------------------- | ----: | -------: | ---------------: |
-| Cloudflare    | brand extraction     |    18 |        3 |               15 |
-| Cloudflare    | candidate enrichment |    49 |       30 |               19 |
-| Cloudflare    | final review         |    13 |       11 |                2 |
+| Cloudflare    | brand extraction     |    23 |        3 |               20 |
+| Cloudflare    | candidate enrichment |    66 |       39 |               27 |
+| Cloudflare    | final review         |    17 |       15 |                2 |
 | Mistral       | brand extraction     |     3 |        0 |                3 |
-| Mistral       | candidate enrichment |    35 |       17 |               18 |
-| Mistral       | final review         |     9 |        1 |                8 |
-| OpenAI        | final review         |    13 |       13 |                0 |
+| Mistral       | candidate enrichment |    45 |       18 |               27 |
+| Mistral       | final review         |    17 |        9 |                8 |
+| OpenAI        | final review         |    17 |       17 |                0 |
 | Deterministic | candidate fallback   |    18 |        0 |               18 |
-| Deterministic | final fallback       |     3 |        0 |                3 |
+| Deterministic | final fallback       |     7 |        0 |                7 |
 
 The protected Mistral smoke test also passed on `mistral-small-2603`: schema-valid output, one call,
 zero failures, 65 input units, and 32 output units.
@@ -85,11 +85,14 @@ zero failures, 65 input units, and 32 output units.
 - Chrome 150 printed the production report at desktop width to an eight-page Letter PDF. Every page
   contains report content, major cards remain intact, and the final agency CTA now shares page eight
   with the methodology block instead of following an almost blank page.
-- The reviewed PDF artifact is `tmp/pdfs/openseo-so-012fe0bb.pdf` and is intentionally not committed.
+- Chrome print-to-PDF was re-run against deployment `db53246b`: eight Letter pages with respective
+  non-whitespace character counts of 78, 900, 249, 1,208, 503, 293, 347, and 436. No page is blank.
+- The reviewed PDF artifact is `tmp/pdfs/openseo-so-012fe0bb-final.pdf` and is intentionally not
+  committed.
 
 ### Current limitations
 
-- The fresh report did not use GPT-5.6 because all 13 OpenAI final-review attempts that UTC day failed;
+- The fresh report did not use GPT-5.6 because all 17 OpenAI final-review attempts that UTC day failed;
   Mistral completed the verified final review. Provider provenance is displayed and persisted.
 - Deterministic campaign language prioritizes evidence safety over editorial variety. The concepts are
   brand- and territory-specific, but share a deliberately consistent walkthrough/comparison shape.
