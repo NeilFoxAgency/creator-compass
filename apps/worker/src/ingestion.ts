@@ -286,8 +286,8 @@ export async function ingestWebsite(rawUrl: string): Promise<{
 }
 
 export function ingestUserText(text: string, domain = "user-provided.local") {
-  const excerptChunks = Array.from({ length: Math.ceil(text.length / 420) }, (_, index) =>
-    text.slice(index * 420, (index + 1) * 420),
+  const excerptChunks = Array.from({ length: Math.ceil(text.length / 300) }, (_, index) =>
+    text.slice(index * 300, (index + 1) * 300),
   );
   const evidence: EvidenceRef[] = excerptChunks.slice(0, 8).map((excerpt, index) => ({
     id: `user-${index + 1}`,
@@ -323,8 +323,9 @@ export function deterministicProfile(
     )
     .replace(/\b(?:no|without)\s+(?:claims?\s+(?:of|about)\s+)?[^.!?\n]*/g, " ");
   const brandName =
-    title.match(/^(.{2,60}?)\s+(?:is|offers|provides|helps|builds|creates)\b/i)?.[1]?.trim() ??
-    title.replace(/\s*[|–—-].*$/, "").slice(0, 80);
+    title
+      .match(/^(.{2,60}?)\s+(?:is|sells|offers|provides|helps|builds|creates)\b/i)?.[1]
+      ?.trim() ?? title.replace(/\s*[|–—-].*$/, "").slice(0, 80);
   const categories = [
     "software",
     "marketing",
@@ -364,6 +365,8 @@ export function deterministicProfile(
     /creative marketer/.test(lower) ? "creative marketer" : "",
     /designer/.test(lower) ? "designer" : "",
     /e.?commerce team/.test(lower) ? "e-commerce team" : "",
+    /homeowner/.test(lower) ? "homeowner" : "",
+    /beauty consumer|beauty shopper|makeup/.test(lower) ? "beauty shopper" : "",
   ].filter(Boolean);
   const useCases = [
     /keyword research/.test(lower) ? "keyword research" : "",
@@ -381,6 +384,11 @@ export function deterministicProfile(
     /product photograph|product image/.test(lower) ? "product photography" : "",
     /creative production|visual content/.test(lower) ? "visual content production" : "",
     /video edit/.test(lower) ? "video editing" : "",
+    /skincare|skin care|routine/.test(lower) ? "skincare routine" : "",
+    /makeup|application technique/.test(lower) ? "makeup application" : "",
+    /hvac installation|air.conditioning/.test(lower) ? "HVAC installation" : "",
+    /home comfort|home.services|home repair/.test(lower) ? "home repair" : "",
+    /local technician|local service/.test(lower) ? "find a local service" : "",
   ].filter(Boolean);
   const jobsToBeDone = [
     /keyword research/.test(lower) ? "research keyword opportunities" : "",
@@ -395,6 +403,10 @@ export function deterministicProfile(
       : "",
     /product photograph|product image/.test(lower) ? "produce product visuals" : "",
     /creative production|visual content/.test(lower) ? "speed up creative production" : "",
+    /skincare|skin care/.test(lower) ? "choose a skincare routine" : "",
+    /makeup|shade|texture/.test(lower) ? "choose beauty products" : "",
+    /repair|replacement option/.test(lower) ? "repair a home system" : "",
+    /local technician|local service/.test(lower) ? "find a trusted local provider" : "",
   ].filter(Boolean);
   return {
     canonicalDomain: domain,
@@ -428,6 +440,9 @@ export function deterministicProfile(
       /\bseo\b|marketing/.test(lower) ? "marketing" : "",
       software ? "software" : "",
       /e.?commerce/.test(lower) ? "e-commerce" : "",
+      /skincare|makeup|beauty|fragrance/.test(lower) ? "beauty" : "",
+      /hvac|air.conditioning|plumbing|electrical/.test(lower) ? "residential services" : "",
+      /local technician|local service/.test(lower) ? "local services" : "",
     ].filter(Boolean),
     useCases,
     jobsToBeDone: jobsToBeDone.length ? jobsToBeDone : ["evaluate the offer"],

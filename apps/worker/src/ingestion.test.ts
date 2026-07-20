@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { extractPage, ingestUserText, readBoundedBody, validatePublicUrl } from "./ingestion";
+import {
+  deterministicProfile,
+  extractPage,
+  ingestUserText,
+  readBoundedBody,
+  validatePublicUrl,
+} from "./ingestion";
 
 describe("safe URL validation", () => {
   it.each([
@@ -35,4 +41,29 @@ describe("HTML extraction", () => {
   });
   it("creates bounded evidence from provided text", () =>
     expect(ingestUserText("A".repeat(900)).evidence.length).toBeGreaterThan(1));
+
+  it("extracts grounded beauty and local-service jobs from pasted context", () => {
+    const beautyText =
+      "Glossier sells physical skincare and makeup products to beauty consumers who compare shades, textures, and application techniques.";
+    const beauty = deterministicProfile(
+      "provided-brand.example",
+      beautyText,
+      ingestUserText(beautyText).evidence,
+    );
+    expect(beauty.brandName).toBe("Glossier");
+    expect(beauty.jobsToBeDone).toEqual(
+      expect.arrayContaining(["choose a skincare routine", "choose beauty products"]),
+    );
+
+    const serviceText =
+      "CoolToday is a local home-services company helping homeowners with HVAC installation and urgent home repair by a local technician.";
+    const service = deterministicProfile(
+      "provided-brand.example",
+      serviceText,
+      ingestUserText(serviceText).evidence,
+    );
+    expect(service.jobsToBeDone).toEqual(
+      expect.arrayContaining(["repair a home system", "find a trusted local provider"]),
+    );
+  });
 });

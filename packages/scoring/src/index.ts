@@ -558,7 +558,7 @@ export function buildCandidateSet(profile: BrandProfile, count = 12): TerritoryR
       (item) =>
         item.eligible &&
         item.territoryFitScore >= 38 &&
-        item.scoreComponents.directEvidenceMatch >= 42,
+        item.scoreComponents.directEvidenceMatch >= (item.territoryFitScore < 50 ? 46 : 42),
     )
     .slice(0, Math.max(0, count - 2))
     .map((item) => recommendation(profile, item, "adjacent"));
@@ -591,7 +591,7 @@ export function selectPortfolio(profile: BrandProfile): TerritoryRecommendation[
         !selectedIds.has(item.territory.id) &&
         item.territoryFitScore >= 38 &&
         item.territoryFitScore < 50 &&
-        item.scoreComponents.directEvidenceMatch >= 42,
+        item.scoreComponents.directEvidenceMatch >= 46,
     )
     .slice(0, 2);
   const risks = rankRiskCandidates(profile).slice(0, 2);

@@ -604,6 +604,7 @@ function normalizeVisibleReport(value: unknown) {
     ...report,
     brandProfile: {
       ...report.brandProfile,
+      summary: readable(report.brandProfile.summary),
       products: report.brandProfile.products.map((product) => ({
         ...product,
         name: /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(product.name)
@@ -743,6 +744,11 @@ export function validateDeliverableReport(value: unknown) {
       reasons.push(`${territory.territoryId}:adjacent threshold`);
     if (territory.classification === "experimental" && score < 38)
       reasons.push(`${territory.territoryId}:experimental threshold`);
+    if (
+      territory.classification === "experimental" &&
+      (territory.scoreComponents?.directEvidenceMatch ?? 100) < 46
+    )
+      reasons.push(`${territory.territoryId}:experimental bridge lacks direct evidence`);
     if (
       territory.classification === "core" &&
       (territory.scoreComponents?.directEvidenceMatch ?? 100) < 46
