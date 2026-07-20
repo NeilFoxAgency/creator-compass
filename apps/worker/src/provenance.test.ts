@@ -10,6 +10,7 @@ import {
   normalizeReviewFormat,
   normalizeReviewWhy,
   normalizeReportForDelivery,
+  normalizeReviewReadinessKeys,
   prepareEvidenceForModel,
   validateDeliverableReport,
 } from "./index";
@@ -143,6 +144,26 @@ describe("server-owned evidence provenance", () => {
       status: "needs-input",
       code: "WEBSITE_UNAVAILABLE",
     });
+  });
+
+  it("repairs unknown model readiness priorities using actual report keys", () => {
+    const report = assembleDeterministicReport(recommendableProfile);
+    const core = report.territories.find((territory) => territory.classification === "core")!;
+    const normalized = normalizeReviewReadinessKeys(report, {
+      portfolio: [{ territoryId: core.territoryId, classification: "core" }],
+      northStarTerritoryId: core.territoryId,
+      format: "workflow walkthrough",
+      creatorDirection: "An SEO practitioner who can demonstrate the documented buyer workflow.",
+      testShape: "Run one bounded creator demonstration with a defined conversion event.",
+      why: "This route has the strongest direct buyer and use-case evidence.",
+      fixFirst: ["invalid-readiness-key"],
+      assumptions: [],
+    });
+    expect(normalized.fixFirst.length).toBeGreaterThan(0);
+    expect(normalized.fixFirst).not.toContain("invalid-readiness-key");
+    expect(
+      normalized.fixFirst.every((key) => report.readiness.some((item) => item.key === key)),
+    ).toBe(true);
   });
   it("overrides the model domain and restores immutable evidence records", () => {
     const result = applyExtractedProfile(profile, "canonical.example", extracted);

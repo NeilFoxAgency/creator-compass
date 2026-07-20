@@ -868,29 +868,30 @@ function applyReview(
   candidates: TerritoryRecommendation[],
   result: ModelResult<FinalReview>,
 ) {
-  if (!validPortfolio(review, candidates))
+  const normalizedReview = normalizeReviewReadinessKeys(report, review);
+  if (!validPortfolio(normalizedReview, candidates))
     throw new Error("The strategic review returned an invalid portfolio.");
-  assertReviewQuality(report, review, candidates);
+  assertReviewQuality(report, normalizedReview, candidates);
   const candidateMap = new Map(candidates.map((candidate) => [candidate.territoryId, candidate]));
-  const northCandidate = candidateMap.get(review.northStarTerritoryId)!;
-  report.territories = review.portfolio.map((item) => ({
+  const northCandidate = candidateMap.get(normalizedReview.northStarTerritoryId)!;
+  report.territories = normalizedReview.portfolio.map((item) => ({
     ...candidateMap.get(item.territoryId)!,
     classification: item.classification,
   }));
   report.northStar = {
-    territoryId: review.northStarTerritoryId,
-    format: normalizeReviewFormat(review.format, northCandidate),
-    creatorDirection: review.creatorDirection,
+    territoryId: normalizedReview.northStarTerritoryId,
+    format: normalizeReviewFormat(normalizedReview.format, northCandidate),
+    creatorDirection: normalizedReview.creatorDirection,
     testShape: /^(?:no\s+(?:experimental|risk|valid)|none\b|not applicable)/i.test(
-      review.testShape.trim(),
+      normalizedReview.testShape.trim(),
     )
       ? (report.northStar?.testShape ??
         "Run one bounded creator test with a documented audience, conversion event, and review point.")
-      : review.testShape,
-    why: normalizeReviewWhy(review.why),
-    fixFirst: review.fixFirst,
+      : normalizedReview.testShape,
+    why: normalizeReviewWhy(normalizedReview.why),
+    fixFirst: normalizedReview.fixFirst,
   };
-  report.assumptions = [...new Set([...report.assumptions, ...review.assumptions])];
+  report.assumptions = [...new Set([...report.assumptions, ...normalizedReview.assumptions])];
   report.aiReview = {
     usedGpt56: result.provider === "openai" && result.model.startsWith("gpt-5.6"),
     model: result.model,
@@ -902,6 +903,19 @@ function applyReview(
           ? "verified-fallback"
           : "cloudflare-fallback",
   };
+}
+
+export function normalizeReviewReadinessKeys(
+  report: CreatorCompassReport,
+  review: FinalReview,
+): FinalReview {
+  const allowed = new Set(report.readiness.map((dimension) => dimension.key));
+  const filtered = [...new Set(review.fixFirst.filter((key) => allowed.has(key)))];
+  const fallback = report.readiness
+    .filter((dimension) => dimension.status === "weak" || dimension.status === "unknown")
+    .slice(0, 3)
+    .map((dimension) => dimension.key);
+  return { ...review, fixFirst: filtered.length ? filtered : fallback };
 }
 
 function factSegments(values: string[]) {
