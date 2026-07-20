@@ -228,6 +228,17 @@ describe("territory fit scoring", () => {
     expect(conceptsFor("open-source-and-self-hosting")).toMatch(/self-hosting/i);
     expect(conceptsFor("open-source-and-self-hosting")).toMatch(/usage-based pricing/i);
   });
+
+  it("uses the brand name when extraction returns a generic product label", () => {
+    const report = assembleDeterministicReport({
+      ...openSeo,
+      products: [{ name: "open source SEO platform", category: "SEO tools" }],
+    });
+    expect(JSON.stringify(report.territories[0]?.campaignConcepts)).toContain("OpenSEO");
+    expect(JSON.stringify(report.territories[0]?.campaignConcepts)).not.toContain(
+      "use open source SEO platform",
+    );
+  });
 });
 
 describe("product-aware readiness", () => {

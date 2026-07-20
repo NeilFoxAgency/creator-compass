@@ -315,7 +315,7 @@ const territoryFeaturePriorities: Record<string, string[]> = {
     "keyword research",
     "backlink analysis",
     "rank tracking",
-    "site audit",
+    "site audits",
   ],
   "ai-agents-and-workflow-automation": ["MCP", "AI agent", "workflow automation", "integration"],
   "developer-tools": ["MCP", "self-hosting", "open source", "API", "developer workflow"],
@@ -328,14 +328,14 @@ const territoryFeaturePriorities: Record<string, string[]> = {
     "deployment",
   ],
   "saas-and-indie-hacking": ["usage-based pricing", "self-hosting", "product analytics"],
-  "web-development": ["site audit", "technical SEO", "Search Console", "website"],
+  "web-development": ["site audits", "technical SEO", "Search Console", "website"],
   "growth-marketing-and-conversion-optimization": [
     "rank tracking",
-    "site audit",
+    "site audits",
     "backlink analysis",
     "competitor analysis",
   ],
-  "agency-operations": ["site audit", "backlink analysis", "keyword research", "client reporting"],
+  "agency-operations": ["site audits", "backlink analysis", "keyword research", "client reporting"],
 };
 
 function matchedUseCases(profile: BrandProfile, territory: CreatorTerritory) {
@@ -346,13 +346,13 @@ function matchedUseCases(profile: BrandProfile, territory: CreatorTerritory) {
   ].filter((value, index, all) => all.indexOf(value) === index);
   const priorities = territoryFeaturePriorities[territory.id] ?? [];
   const prioritized = priorities.flatMap((priority) =>
-    candidates
-      .filter(
-        (value) =>
-          normalize(value).includes(normalize(priority)) ||
-          normalize(priority).includes(normalize(value)),
-      )
-      .sort((a, b) => a.length - b.length),
+    candidates.some(
+      (value) =>
+        normalize(value).includes(normalize(priority)) ||
+        normalize(priority).includes(normalize(value)),
+    )
+      ? [priority === "billed by usage" ? "usage-based pricing" : priority]
+      : [],
   );
   const ranked = candidates
     .map((value) => ({
@@ -361,10 +361,11 @@ function matchedUseCases(profile: BrandProfile, territory: CreatorTerritory) {
     }))
     .sort((a, b) => b.score - a.score)
     .map(({ value }) => value);
-  const selected = [...prioritized, ...ranked].filter(
+  const uniquePrioritized = prioritized.filter((value, index, all) => all.indexOf(value) === index);
+  const selected = [...uniquePrioritized, ...ranked].filter(
     (value, index, all) => all.indexOf(value) === index,
   );
-  const secondary = prioritized.slice(1, 4);
+  const secondary = uniquePrioritized.slice(1, 4);
   return [
     selected[0] ?? territory.useCases[0] ?? territory.name.toLowerCase(),
     secondary.length > 1
@@ -383,7 +384,14 @@ function recommendation(
   classification: TerritoryRecommendation["classification"],
 ): TerritoryRecommendation {
   const { territory, territoryFitScore, scoreComponents, evidenceConfidence } = scored;
-  const product = profile.products[0]?.name ?? profile.brandName;
+  const extractedProductName = profile.products[0]?.name?.trim();
+  const product =
+    !extractedProductName ||
+    /^(?:(?:modern|open[- ]source)\s+)?(?:seo\s+)?(?:platform|software|service|product|tool)$/i.test(
+      extractedProductName,
+    )
+      ? profile.brandName
+      : extractedProductName;
   const goal = safeGoal(profile, territory);
   const [useCase, secondaryUseCase] = matchedUseCases(profile, territory);
   const format = territory.commonContentFormats[0] ?? "practical demonstration";
