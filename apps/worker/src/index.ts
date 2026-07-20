@@ -1066,12 +1066,10 @@ async function runAnalysis(env: Env, analysisId: string) {
     );
     let profile = deterministic;
     const providers = primaryProviders(env);
-    // Native Workers AI binding calls cannot be aborted once stalled. Pasted context is already
-    // server-grounded, so use the cancellable HTTP provider on this continuation path while
-    // preserving Cloudflare-first routing for website analyses.
-    const groundedContextProviders = input.userProvidedText
-      ? providers.filter((provider) => provider.name !== "cloudflare")
-      : providers;
+    // Pasted context is already server-grounded and deterministic extraction is sufficient for
+    // the continuation flow. Avoid making delivery depend on an unnecessary enrichment call;
+    // the bounded OpenAI strategic review still runs below when available.
+    const groundedContextProviders = input.userProvidedText ? [] : providers;
     let brandExtractionPath = "deterministic-fallback";
     if (groundedContextProviders.length) {
       try {
@@ -1122,7 +1120,7 @@ async function runAnalysis(env: Env, analysisId: string) {
     await updateJob(env, analysisId, "running", "charting-territories");
     let candidates = buildCandidateSet(profile, 8);
     const candidateProviders: StructuredModelProvider[] = [...groundedContextProviders];
-    if (env.MISTRAL_API_KEY) {
+    if (groundedContextProviders.length && env.MISTRAL_API_KEY) {
       const mistralRepair = new MistralProvider(env.MISTRAL_API_KEY, env.MISTRAL_MODEL);
       candidateProviders.push({
         name: "mistral",
