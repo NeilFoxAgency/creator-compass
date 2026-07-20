@@ -6,6 +6,7 @@ import type {
 } from "@creator-compass/contracts";
 import { sampleReport } from "./sample";
 import { isSampleReport, stripOuterQuotationMarks } from "./display";
+import { TurnstileWidget } from "./TurnstileWidget";
 
 const stageLabels: Record<string, string> = {
   queued: "Preparing your analysis",
@@ -80,16 +81,27 @@ function LandingPage() {
   const [market, setMarket] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
+    if (!turnstileToken) {
+      setError("Please complete the bot check before starting the analysis.");
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch("/api/analyses", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url, goal: goal || undefined, market: market || undefined }),
+        body: JSON.stringify({
+          url,
+          goal: goal || undefined,
+          market: market || undefined,
+          turnstileToken,
+        }),
       });
       const body = (await response.json()) as {
         analysisId?: string;
@@ -102,6 +114,7 @@ function LandingPage() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The analysis could not start.");
       setBusy(false);
+      setTurnstileReset((value) => value + 1);
     }
   }
 
@@ -165,6 +178,7 @@ function LandingPage() {
                 </label>
               </div>
             )}
+            <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileReset} />
             {error && (
               <p className="form-error" role="alert">
                 {error}
@@ -384,6 +398,8 @@ function ProgressPage({ id }: { id: string }) {
   const [job, setJob] = useState<AnalysisJob | null>(null);
   const [text, setText] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
   useEffect(() => {
     let active = true;
     async function poll() {
@@ -410,14 +426,19 @@ function ProgressPage({ id }: { id: string }) {
   async function continueWithText(event: FormEvent) {
     event.preventDefault();
     setSubmitError("");
+    if (!turnstileToken) {
+      setSubmitError("Please complete the bot check before continuing.");
+      return;
+    }
     const response = await fetch("/api/analyses", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userProvidedText: text }),
+      body: JSON.stringify({ userProvidedText: text, turnstileToken }),
     });
     const body = (await response.json()) as { analysisId?: string; error?: { message?: string } };
     if (!response.ok || !body.analysisId) {
       setSubmitError(body.error?.message ?? "The description could not be submitted.");
+      setTurnstileReset((value) => value + 1);
       return;
     }
     window.location.assign(`/analysis/${body.analysisId}`);
@@ -460,6 +481,7 @@ function ProgressPage({ id }: { id: string }) {
                 onChange={(event) => setText(event.target.value)}
               />
             </label>
+            <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileReset} />
             <button>Continue from this description →</button>
           </form>
         )}
@@ -754,19 +776,26 @@ function PreliminaryPanel({ report }: { report: CreatorCompassReport }) {
   const [context, setContext] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setBusy(true);
     setError("");
+    if (!turnstileToken) {
+      setError("Please complete the bot check before continuing.");
+      return;
+    }
+    setBusy(true);
     const response = await fetch("/api/analyses", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userProvidedText: context, refresh: true }),
+      body: JSON.stringify({ userProvidedText: context, refresh: true, turnstileToken }),
     });
     const body = (await response.json()) as { analysisId?: string; error?: { message?: string } };
     if (!response.ok || !body.analysisId) {
       setError(body.error?.message ?? "The context could not be submitted.");
       setBusy(false);
+      setTurnstileReset((value) => value + 1);
       return;
     }
     window.location.assign(`/analysis/${body.analysisId}`);
@@ -798,6 +827,7 @@ function PreliminaryPanel({ report }: { report: CreatorCompassReport }) {
             placeholder="Answer the questions in one focused brand description…"
           />
         </label>
+        <TurnstileWidget onToken={setTurnstileToken} resetSignal={turnstileReset} theme="dark" />
         <button disabled={busy}>
           {busy ? "Rechecking evidence…" : "Continue with this context →"}
         </button>

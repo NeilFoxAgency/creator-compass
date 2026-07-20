@@ -29,6 +29,9 @@ Ideal for YouTube creator outreach planning, campaign strategy, deliverable trac
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/](docs/), and run `pnpm test` before changes.
 
+Public AI-triggering forms use a managed Cloudflare Turnstile verification Worker; see
+[docs/security.md](docs/security.md) for the trust boundary and secret-handling rules.
+
 ## License
 
 MIT

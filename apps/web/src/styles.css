@@ -304,6 +304,19 @@ button {
   text-align: left;
   padding: 0 12px;
 }
+.turnstile-field {
+  min-height: 65px;
+  padding: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.turnstile-error {
+  margin: 0;
+  color: #9a321c;
+  font-size: 12px;
+}
 .sample-link {
   display: flex;
   align-items: center;

@@ -66,6 +66,7 @@ export type Env = {
   REPORT_CACHE_TTL_DAYS: string;
   ADMIN_BYPASS_SECRET?: string;
   TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_VERIFY_URL?: string;
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -255,11 +256,30 @@ async function fingerprint(input: AnalysisInput) {
   return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-async function verifyTurnstile(token: string | undefined, env: Env, ip: string) {
-  if (!env.TURNSTILE_SECRET_KEY) return true;
+export async function verifyTurnstile(
+  token: string | undefined,
+  env: Pick<Env, "TURNSTILE_SECRET_KEY" | "TURNSTILE_VERIFY_URL">,
+  ip: string,
+) {
+  if (!env.TURNSTILE_VERIFY_URL && !env.TURNSTILE_SECRET_KEY) return true;
   if (!token) return false;
+  if (env.TURNSTILE_VERIFY_URL) {
+    try {
+      const response = await fetch(env.TURNSTILE_VERIFY_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token, remoteip: ip }),
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (!response.ok) return false;
+      const body = (await response.json()) as { success?: boolean };
+      return Boolean(body.success);
+    } catch {
+      return false;
+    }
+  }
   const form = new FormData();
-  form.set("secret", env.TURNSTILE_SECRET_KEY);
+  form.set("secret", env.TURNSTILE_SECRET_KEY!);
   form.set("response", token);
   form.set("remoteip", ip);
   const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {

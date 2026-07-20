@@ -45,6 +45,7 @@
     "CLOUDFLARE_REVIEW_MODEL": "@cf/openai/gpt-oss-20b",
     "CLOUDFLARE_EMBEDDING_MODEL": "@cf/qwen/qwen3-embedding-0.6b",
     "MISTRAL_MODEL": "mistral-small-2603",
+    "TURNSTILE_VERIFY_URL": "https://turnstile-siteverify-creator-compass.neilthenerd1.workers.dev",
     "REPORT_CACHE_TTL_DAYS": "30",
   },
 }
