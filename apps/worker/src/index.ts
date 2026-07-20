@@ -566,6 +566,20 @@ async function runAnalysis(env: Env, analysisId: string) {
     const report = assembleDeterministicReport(profile, { id, slug });
     await updateJob(env, analysisId, "running", "charting-territories");
     let candidates = buildCandidateSet(profile, 8);
+    const candidateProviders: StructuredModelProvider[] = [...providers];
+    if (env.MISTRAL_API_KEY) {
+      const mistralRepair = new MistralProvider(env.MISTRAL_API_KEY, env.MISTRAL_MODEL);
+      candidateProviders.push({
+        name: "mistral",
+        generate: (request) =>
+          mistralRepair.generate({
+            ...request,
+            system: `REPAIR MODE: A previous candidate response failed grounding or completeness validation. Return every supplied candidate exactly once. Use no digits or numerical claims anywhere. Use the two supplied documentedUseCaseFocus values for two distinct, complete tactical concepts. Do not repeat a title as a concept. ${request.system}`,
+            temperature: 0,
+            promptVersion: "candidate-v2-repair",
+          }),
+      });
+    }
     let candidateEnrichmentPath = "deterministic-fallback";
     const enrichmentChunks: NonNullable<
       NonNullable<CreatorCompassReport["providerPath"]>["enrichmentChunks"]
@@ -580,10 +594,12 @@ async function runAnalysis(env: Env, analysisId: string) {
           const chunk = candidates.slice(start, start + 2);
           try {
             const enrichmentResult = await generateWithFallback(
-              providers,
+              candidateProviders,
               {
                 task: "candidate-reasoning",
-                schema: candidateEnrichmentSchema,
+                schema: candidateEnrichmentSchema.extend({
+                  candidates: candidateEnrichmentSchema.shape.candidates.length(chunk.length),
+                }),
                 input: {
                   brand: { ...profile, evidence: undefined },
                   websiteEvidence: prepareEvidenceForModel(profile.evidence),
@@ -814,7 +830,7 @@ async function runAnalysis(env: Env, analysisId: string) {
     const grammarChecksPassed =
       !/\btrying to (?:seo platform|marketing software|technology|platform|service)\b/i.test(
         JSON.stringify(report),
-      );
+      ) && !/\bsurfaceing\b/i.test(JSON.stringify(report));
     const fullQuality =
       report.recommendationState === "recommendation" &&
       enrichmentSuccessRate >= 0.75 &&
