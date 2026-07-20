@@ -960,9 +960,6 @@ export function assertReviewQuality(
     metaInstructionPattern.test(review.why)
   )
     throw new Error("The strategic review returned meta-instructions or an undeveloped test plan.");
-  const readinessKeys = new Set(report.readiness.map((dimension) => dimension.key));
-  if (review.fixFirst.some((key) => !readinessKeys.has(key)))
-    throw new Error("The strategic review returned an unknown readiness priority.");
   const selected = new Set(review.portfolio.map((item) => item.territoryId));
   const selectedConceptText = candidates
     .filter((candidate) => selected.has(candidate.territoryId))
