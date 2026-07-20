@@ -214,6 +214,20 @@ describe("territory fit scoring", () => {
       ),
     ).toBe(true);
   });
+
+  it("carries distinct documented OpenSEO features into safe campaign fallbacks", () => {
+    const portfolio = selectPortfolio(openSeo);
+    const conceptsFor = (territoryId: string) =>
+      JSON.stringify(
+        portfolio.find((item) => item.territoryId === territoryId)?.campaignConcepts ?? [],
+      );
+    expect(conceptsFor("seo-and-search-marketing")).toMatch(/keyword research/i);
+    expect(conceptsFor("seo-and-search-marketing")).toMatch(/backlink analysis/i);
+    expect(conceptsFor("seo-and-search-marketing")).toMatch(/rank tracking/i);
+    expect(conceptsFor("seo-and-search-marketing")).toMatch(/site audits/i);
+    expect(conceptsFor("open-source-and-self-hosting")).toMatch(/self-hosting/i);
+    expect(conceptsFor("open-source-and-self-hosting")).toMatch(/usage-based pricing/i);
+  });
 });
 
 describe("product-aware readiness", () => {

@@ -319,7 +319,14 @@ const territoryFeaturePriorities: Record<string, string[]> = {
   ],
   "ai-agents-and-workflow-automation": ["MCP", "AI agent", "workflow automation", "integration"],
   "developer-tools": ["MCP", "self-hosting", "open source", "API", "developer workflow"],
-  "open-source-and-self-hosting": ["self-hosting", "open source", "source code", "deployment"],
+  "open-source-and-self-hosting": [
+    "self-hosting",
+    "open source",
+    "usage-based pricing",
+    "billed by usage",
+    "source code",
+    "deployment",
+  ],
   "saas-and-indie-hacking": ["usage-based pricing", "self-hosting", "product analytics"],
   "web-development": ["site audit", "technical SEO", "Search Console", "website"],
   "growth-marketing-and-conversion-optimization": [
@@ -357,9 +364,16 @@ function matchedUseCases(profile: BrandProfile, territory: CreatorTerritory) {
   const selected = [...prioritized, ...ranked].filter(
     (value, index, all) => all.indexOf(value) === index,
   );
+  const secondary = prioritized.slice(1, 4);
   return [
     selected[0] ?? territory.useCases[0] ?? territory.name.toLowerCase(),
-    selected[1] ?? selected[0] ?? territory.useCases[0] ?? territory.name.toLowerCase(),
+    secondary.length > 1
+      ? new Intl.ListFormat("en", { style: "long", type: "conjunction" }).format(secondary)
+      : (secondary[0] ??
+        selected[1] ??
+        selected[0] ??
+        territory.useCases[0] ??
+        territory.name.toLowerCase()),
   ] as const;
 }
 

@@ -565,7 +565,7 @@ async function runAnalysis(env: Env, analysisId: string) {
     const slug = `${ingestion.domain.replace(/[^a-z0-9]+/gi, "-")}-${crypto.randomUUID().slice(0, 8)}`;
     const report = assembleDeterministicReport(profile, { id, slug });
     await updateJob(env, analysisId, "running", "charting-territories");
-    let candidates = buildCandidateSet(profile, 12);
+    let candidates = buildCandidateSet(profile, 8);
     let candidateEnrichmentPath = "deterministic-fallback";
     const enrichmentChunks: NonNullable<
       NonNullable<CreatorCompassReport["providerPath"]>["enrichmentChunks"]
