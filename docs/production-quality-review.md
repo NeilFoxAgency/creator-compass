@@ -222,3 +222,37 @@ Production checks:
   not invoke it.
 - YouTube expansion remains disabled, and Turnstile will remain secret-disabled until the browser
   widget submits valid tokens end to end.
+
+## Final reliability and presentation pass — 2026-07-20
+
+Reviewed production deployment: `65c99adb-97dd-44f7-9195-eab85c93b601`  
+Methodology: `2026.07.4`
+
+Provider completion is no longer a delivery-quality proxy. Reports pass the content validator or
+are converted to preliminary hypotheses; a valid deterministic report is delivered normally. The
+website-unavailable path remains `needs-input`. Pasted brand context now uses deterministic,
+server-grounded extraction and candidate construction before the bounded strategic review, avoiding
+unnecessary dependency on a provider call that cannot improve source provenance.
+
+| Review brand | Report slug                       | Stored provider path                                                                | GPT-5.6 used | Reviewed result                                                                                              |
+| ------------ | --------------------------------- | ----------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
+| Loova AI     | `provided-brand-example-c9c3f736` | Deterministic extraction → deterministic candidates → OpenAI GPT-5.6                | Yes          | AI image/video creation, creative AI/design workflows, and e-commerce growth; no SEO or search capabilities. |
+| OpenSEO      | `provided-brand-example-af675cc0` | Deterministic extraction → deterministic candidates → OpenAI GPT-5.6                | Yes          | SEO/search marketing, AI-agent workflows, and open source/self-hosting; no lifestyle categories.             |
+| Glossier     | `provided-brand-example-c861c590` | Deterministic extraction → deterministic candidates → deterministic strategy review | No           | Beauty tutorials and skincare education; normal validated report with physical-product readiness.            |
+| CoolToday    | `provided-brand-example-afdf646a` | Deterministic extraction → deterministic candidates → OpenAI GPT-5.6                | Yes          | Home improvement and local discovery; service readiness profile.                                             |
+| Linear       | `provided-brand-example-04595660` | Deterministic extraction → deterministic candidates → OpenAI GPT-5.6                | Yes          | Developer tools with SaaS and web-development adjacency; unsupported open-source positioning removed.        |
+
+The deliberately inaccessible URL job `d52809be-8979-4200-b5a0-646bdad5d690` entered
+`needs-input` with `WEBSITE_UNAVAILABLE` and offered pasted context.
+
+Final cumulative production diagnostics for 2026-07-20: Cloudflare brand extraction 38 calls / 26
+successes / 12 failures; Mistral brand extraction 13 calls / 13 successes; Cloudflare candidate
+enrichment 92 calls / 44 successes / 48 failures; Mistral candidate enrichment 58 calls / 39
+successes / 19 failures; OpenAI final review 29 calls / 5 successes / 24 failures; deterministic
+strategy review 16 uses. These counters include the iterative production verification runs.
+
+Responsive browser checks at 320, 390, 768, and 1440 px confirmed no readiness-score overlap, a
+normal-letter-spacing `/100`, `white-space: nowrap`, and no viewport-width overflow. The live Share
+control returned `Report link copied.` after the Clipboard API rejection fallback. Chrome
+print-to-PDF produced eight nonblank pages; the readiness score is legible on page 5 and no blank
+page precedes the CTA.

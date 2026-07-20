@@ -1,8 +1,25 @@
 {
-  "generatedAt": "2026-07-20T03:10:49.235Z",
-  "methodology": "2026.07.3",
+  "generatedAt": "2026-07-20T19:24:56.452Z",
+  "methodology": "2026.07.4",
   "passed": true,
   "cases": [
+    {
+      "case": "Loova AI",
+      "passed": true,
+      "schemaValid": true,
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "ai-image-and-video-creation",
+        "creative-ai-and-design-workflows"
+      ],
+      "northStar": "ai-image-and-video-creation"
+    },
     {
       "case": "OpenSEO",
       "passed": true,
@@ -17,10 +34,10 @@
       "recommended": [
         "seo-and-search-marketing",
         "ai-agents-and-workflow-automation",
-        "agency-operations",
         "web-development",
-        "growth-marketing-and-conversion-optimization",
-        "open-source-and-self-hosting"
+        "agency-operations",
+        "open-source-and-self-hosting",
+        "saas-and-indie-hacking"
       ],
       "northStar": "seo-and-search-marketing"
     },
@@ -37,11 +54,11 @@
       "grammarSafe": true,
       "recommended": [
         "growth-marketing-and-conversion-optimization",
-        "no-code-and-business-automation",
         "ai-agents-and-workflow-automation",
         "saas-and-indie-hacking",
-        "seo-and-search-marketing",
-        "open-source-and-self-hosting"
+        "no-code-and-business-automation",
+        "developer-tools",
+        "e-commerce-growth"
       ],
       "northStar": "growth-marketing-and-conversion-optimization"
     },
@@ -60,8 +77,7 @@
         "developer-tools",
         "open-source-and-self-hosting",
         "ai-agents-and-workflow-automation",
-        "web-development",
-        "saas-and-indie-hacking"
+        "web-development"
       ],
       "northStar": "developer-tools"
     },
@@ -96,8 +112,7 @@
       "rankTrackingSafe": true,
       "grammarSafe": true,
       "recommended": [
-        "camping",
-        "outdoor-recreation"
+        "camping"
       ],
       "northStar": "camping"
     },
@@ -130,12 +145,7 @@
       "readinessProfileCorrect": true,
       "rankTrackingSafe": true,
       "grammarSafe": true,
-      "recommended": [
-        "web-development",
-        "no-code-and-business-automation",
-        "ai-agents-and-workflow-automation",
-        "developer-tools"
-      ],
+      "recommended": [],
       "northStar": "ABSTAINED"
     },
     {

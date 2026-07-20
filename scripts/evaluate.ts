@@ -122,6 +122,43 @@ const openSeo = makeProfile(
   },
 );
 
+const loova = makeProfile(
+  "Loova AI",
+  "Loova brings together AI image and video models including Sora, Veo, Kling, and Seedance. Create AI images and videos and speed up creative production.",
+  {
+    canonicalDomain: "loova.ai",
+    products: [{ name: "Loova AI", category: "AI image and video generator" }],
+    targetCustomers: ["content creators", "creative marketers", "e-commerce marketers"],
+    customerNeeds: ["create AI images", "generate AI videos", "produce product visuals"],
+    businessModel: "subscription",
+    productType: "software",
+    audienceType: "mixed",
+    buyerRoles: ["content creator", "creative marketer"],
+    userRoles: ["AI image creator", "AI video creator"],
+    industries: ["creative production", "marketing", "design"],
+    useCases: ["AI image generation", "AI video generation", "product photography"],
+    jobsToBeDone: ["create AI images", "generate AI videos", "speed up creative production"],
+    buyerGoalVerbPhrases: ["create AI images", "generate AI videos"],
+    campaignAssetType: "software-access",
+    differentiators: ["integration of multiple AI models", "product photography"],
+    evidence: [
+      {
+        id: "l1",
+        sourceUrl: "https://loova.ai/",
+        excerpt:
+          "Loova brings together AI image and video models including Sora, Veo, Kling, and Seedance. Create AI images and videos and speed up creative production.",
+        kind: "website",
+      },
+      {
+        id: "l2",
+        sourceUrl: "https://loova.ai/product",
+        excerpt: "Generate product photos and videos for visual content production.",
+        kind: "website",
+      },
+    ],
+  },
+);
+
 type Case = {
   profile: BrandProfile;
   expectedAny: string[];
@@ -131,6 +168,17 @@ type Case = {
 };
 
 const cases: Case[] = [
+  {
+    profile: loova,
+    expectedAny: ["ai-image-and-video-creation", "creative-ai-and-design-workflows"],
+    prohibitedCoreAdjacent: [
+      "seo-and-search-marketing",
+      "beauty-tutorials",
+      "gardening",
+      "camping",
+    ],
+    productReadinessKey: "demo-trial-readiness",
+  },
   {
     profile: openSeo,
     expectedAny: [
