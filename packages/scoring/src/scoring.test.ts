@@ -138,7 +138,70 @@ const openSeo = profile(
   },
 );
 
+const loova = profile(
+  "Loova AI",
+  "Loova brings together AI image and video models including Sora, Veo, Kling, and Seedance. Create AI images and videos and speed up creative production.",
+  {
+    canonicalDomain: "loova.ai",
+    products: [{ name: "Loova AI", category: "AI image and video generator" }],
+    targetCustomers: ["content creators", "creative marketers", "e-commerce marketers"],
+    customerNeeds: ["create AI images", "generate AI videos", "produce product visuals"],
+    businessModel: "subscription",
+    productType: "software",
+    audienceType: "mixed",
+    buyerRoles: ["content creator", "creative marketer"],
+    userRoles: ["AI image creator", "AI video creator"],
+    industries: ["creative production", "marketing", "design"],
+    useCases: ["AI image generation", "AI video generation", "product photography"],
+    jobsToBeDone: ["create AI images", "generate AI videos", "speed up creative production"],
+    buyerGoalVerbPhrases: ["create AI images", "generate AI videos"],
+    campaignAssetType: "software-access",
+    demonstrability: "strong",
+    evidence: [
+      {
+        id: "l1",
+        sourceUrl: "https://loova.ai/",
+        excerpt:
+          "Loova brings together AI image and video models including Sora, Veo, Kling, and Seedance. Create AI images and videos and speed up creative production.",
+        kind: "website",
+      },
+      {
+        id: "l2",
+        sourceUrl: "https://loova.ai/product",
+        excerpt: "Generate product photos and videos for visual content production.",
+        kind: "website",
+      },
+    ],
+  },
+);
+
 describe("territory fit scoring", () => {
+  it("routes Loova toward AI creative production without unsupported SEO semantics", () => {
+    const portfolio = selectPortfolio(loova);
+    const selectedText = JSON.stringify(portfolio);
+    const selectedIds = portfolio
+      .filter((item) => item.classification !== "risk")
+      .map((item) => item.territoryId);
+    expect(selectedIds).toEqual(expect.arrayContaining(["ai-image-and-video-creation"]));
+    expect(selectedIds).not.toContain("seo-and-search-marketing");
+    expect(selectedText).not.toMatch(/site audits|keyword research|SERPs|backlinks|rank tracking/i);
+    expect(selectedText).toContain("Loova AI");
+  });
+
+  it("requires direct website evidence before a territory can become Core", () => {
+    const hallucinatedSeo = {
+      ...loova,
+      useCases: [...(loova.useCases ?? []), "keyword research"],
+      jobsToBeDone: [...(loova.jobsToBeDone ?? []), "research keyword opportunities"],
+    };
+    const seo = rankTerritories(hallucinatedSeo).find(
+      (item) => item.territory.id === "seo-and-search-marketing",
+    )!;
+    expect(seo.eligible).toBe(false);
+    expect(selectPortfolio(hallucinatedSeo).map((item) => item.territoryId)).not.toContain(
+      "seo-and-search-marketing",
+    );
+  });
   it("ranks OpenSEO by buyer and use-case fit instead of general readiness", () => {
     const ranked = rankTerritories(openSeo);
     const top = ranked.slice(0, 10).map((item) => item.territory.id);
@@ -208,7 +271,7 @@ describe("territory fit scoring", () => {
     expect(JSON.stringify(report)).not.toMatch(/trying to SEO platform/i);
     expect(
       report.territories.every((item) =>
-        /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid|monitor|self-host)/i.test(
+        /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|generate|produce|edit|speed|deliver|optimize|identify|retain|avoid|monitor|self[ -]?host)/i.test(
           item.customerNeed,
         ),
       ),
@@ -225,8 +288,8 @@ describe("territory fit scoring", () => {
     expect(conceptsFor("seo-and-search-marketing")).toMatch(/backlink analysis/i);
     expect(conceptsFor("seo-and-search-marketing")).toMatch(/rank tracking/i);
     expect(conceptsFor("seo-and-search-marketing")).toMatch(/site audits/i);
-    expect(conceptsFor("open-source-and-self-hosting")).toMatch(/self-hosting/i);
-    expect(conceptsFor("open-source-and-self-hosting")).toMatch(/usage-based pricing/i);
+    expect(conceptsFor("open-source-and-self-hosting")).toMatch(/self[ -]hosting/i);
+    expect(conceptsFor("open-source-and-self-hosting")).toMatch(/usage[ -]based pricing/i);
   });
 
   it("uses the brand name when extraction returns a generic product label", () => {

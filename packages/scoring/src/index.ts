@@ -6,7 +6,7 @@ import type {
 } from "@creator-compass/contracts";
 import { creatorTerritories, type CreatorTerritory } from "@creator-compass/taxonomy";
 
-export const METHODOLOGY_VERSION = "2026.07.3";
+export const METHODOLOGY_VERSION = "2026.07.4";
 
 const statusScore = { strong: 90, mixed: 62, weak: 32, unknown: 50 } as const;
 const genericMatchWords = new Set([
@@ -37,6 +37,21 @@ const normalize = (value: string) =>
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+
+export function humanizeDisplayText(value: string) {
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\becommerce\b/gi, "e-commerce")
+    .replace(/\bseo\b/gi, "SEO")
+    .replace(/\bai\b/gi, "AI")
+    .replace(/\bmcp\b/gi, "MCP")
+    .replace(/\bsaas\b/gi, "SaaS")
+    .replace(/\bb2b\b/gi, "B2B")
+    .replace(/\bapi\b/gi, "API")
+    .replace(/\bugc\b/gi, "UGC")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 const meaningfulTokens = (value: string) =>
   normalize(value)
@@ -132,6 +147,7 @@ export type TerritoryScoreBreakdown = {
   purchaseInfluenceIntent: number;
   evidenceStrength: number;
   incompatibilityPenalty: number;
+  directEvidenceMatch: number;
 };
 
 export type TerritoryScoreResult = {
@@ -173,6 +189,15 @@ function scoreTerritoryDetailed(
     ],
     territory.jobsToBeDone,
   );
+  const directEvidenceMatch = maxFacetMatch(
+    profile.evidence.map((item) => item.excerpt),
+    [
+      ...categoryTargets,
+      ...territory.buyerRoles,
+      ...territory.userRoles,
+      ...territory.jobsToBeDone,
+    ],
+  );
   const directMatch = Math.max(categoryUseCaseMatch, buyerRoleOverlap, jobsToBeDoneOverlap);
   const audienceType = inferredAudienceType(profile);
   const productType = inferredProductType(profile);
@@ -195,7 +220,12 @@ function scoreTerritoryDetailed(
     directMatch < 72;
   const incompatibilityPenalty =
     b2bLifestyleMismatch || broadConsumerTechMismatch ? 90 : productMismatch ? 35 : 0;
-  const eligible = directMatch >= 46 && incompatibilityPenalty === 0;
+  const seoEvidencePresent =
+    territory.id !== "seo-and-search-marketing" ||
+    /\b(SEO|search marketing|search engine optimization|keywords?|search rankings?|SERPs?|backlinks?|site audits?|technical SEO)\b/i.test(
+      evidenceText(profile),
+    );
+  const eligible = directMatch >= 46 && incompatibilityPenalty === 0 && seoEvidencePresent;
   const contentFormatNaturalness = !eligible
     ? 0
     : profile.demonstrability === "strong"
@@ -247,6 +277,7 @@ function scoreTerritoryDetailed(
     b2bLifestyleMismatch ? "B2B software and consumer-lifestyle mismatch" : "",
     broadConsumerTechMismatch ? "broad attention audience without evidenced buyer intent" : "",
     productMismatch ? "product-type mismatch" : "",
+    !seoEvidencePresent ? "no direct SEO evidence" : "",
   ].filter(Boolean);
   return {
     territory,
@@ -263,6 +294,7 @@ function scoreTerritoryDetailed(
       purchaseInfluenceIntent,
       evidenceStrength,
       incompatibilityPenalty,
+      directEvidenceMatch,
     },
   };
 }
@@ -385,15 +417,21 @@ function recommendation(
 ): TerritoryRecommendation {
   const { territory, territoryFitScore, scoreComponents, evidenceConfidence } = scored;
   const extractedProductName = profile.products[0]?.name?.trim();
+  const internalSlug = Boolean(
+    extractedProductName && /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(extractedProductName),
+  );
   const product =
     !extractedProductName ||
+    internalSlug ||
     /^(?:(?:modern|open[- ]source)\s+)?(?:seo\s+)?(?:platform|software|service|product|tool)$/i.test(
       extractedProductName,
     )
       ? profile.brandName
-      : extractedProductName;
-  const goal = safeGoal(profile, territory);
-  const [useCase, secondaryUseCase] = matchedUseCases(profile, territory);
+      : humanizeDisplayText(extractedProductName);
+  const goal = humanizeDisplayText(safeGoal(profile, territory));
+  const [rawUseCase, rawSecondaryUseCase] = matchedUseCases(profile, territory);
+  const useCase = humanizeDisplayText(rawUseCase);
+  const secondaryUseCase = humanizeDisplayText(rawSecondaryUseCase);
   const format = territory.commonContentFormats[0] ?? "practical demonstration";
   const secondFormat = territory.commonContentFormats[1] ?? "comparison";
   const evidenceIds = relevantEvidenceIds(profile, [
@@ -504,7 +542,11 @@ export function buildCandidateSet(profile: BrandProfile, count = 12): TerritoryR
 
 export function selectPortfolio(profile: BrandProfile): TerritoryRecommendation[] {
   const ranked = rankTerritories(profile).filter((item) => item.eligible);
-  const coreScores = ranked.filter((item) => item.territoryFitScore >= 70).slice(0, 3);
+  const coreScores = ranked
+    .filter(
+      (item) => item.territoryFitScore >= 70 && item.scoreComponents.directEvidenceMatch >= 46,
+    )
+    .slice(0, 3);
   const coreIds = new Set(coreScores.map((item) => item.territory.id));
   const adjacentScores = ranked
     .filter((item) => !coreIds.has(item.territory.id) && item.territoryFitScore >= 50)
@@ -846,10 +888,10 @@ export function assembleDeterministicReport(
         ? {
             territoryId: north.territoryId,
             format: north.sponsorshipFormats[0] ?? "integrated demonstration",
-            creatorDirection: `${north.creatorSizeBand} ${north.name.toLowerCase()} creators`,
+            creatorDirection: `${north.creatorSizeBand} ${humanizeDisplayText(north.name).toLowerCase()} creators`,
             testShape:
               "Brief up to 5 creators, activate 1–2, use one evidenced concept and one defined conversion event, then review the result.",
-            why: `${north.name} clears the strong-fit threshold with ${(north.fitLabel ?? "strong-fit").replace("-", " ")} and ${north.evidenceConfidence ?? north.confidence} evidence confidence.`,
+            why: `${north.name} is a ${(north.fitLabel ?? "strong-fit").replace("-", " ")} with ${north.evidenceConfidence ?? north.confidence} evidence confidence.`,
             fixFirst: readiness
               .filter((item) => item.status === "weak" || item.status === "unknown")
               .slice(0, 3)

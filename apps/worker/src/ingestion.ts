@@ -344,6 +344,13 @@ export function deterministicProfile(
     /\bmcp\b|model context protocol/.test(lower) ? "MCP integration" : "",
     /ai agent/.test(lower) ? "AI agent integration" : "",
     /conversion|landing page/.test(lower) ? "conversion optimization" : "",
+    /ai image|image generator/.test(lower) ? "AI image generation" : "",
+    /ai video|video generator|text to video|image to video/.test(lower)
+      ? "AI video generation"
+      : "",
+    /product photograph|product image/.test(lower) ? "product photography" : "",
+    /creative production|visual content/.test(lower) ? "visual content production" : "",
+    /video edit/.test(lower) ? "video editing" : "",
   ].filter(Boolean);
   const jobsToBeDone = [
     /keyword research/.test(lower) ? "research keyword opportunities" : "",
@@ -352,6 +359,10 @@ export function deterministicProfile(
     /site audit/.test(lower) ? "audit website SEO" : "",
     /self.host/.test(lower) ? "self-host the software" : "",
     /\bmcp\b|ai agent/.test(lower) ? "connect AI agents to SEO data" : "",
+    /ai image|image generator/.test(lower) ? "create AI images" : "",
+    /ai video|video generator|text to video|image to video/.test(lower) ? "generate AI videos" : "",
+    /product photograph|product image/.test(lower) ? "produce product visuals" : "",
+    /creative production|visual content/.test(lower) ? "speed up creative production" : "",
   ].filter(Boolean);
   return {
     canonicalDomain: domain,
@@ -405,7 +416,12 @@ export function deterministicProfile(
         : lower.includes("buy now") || lower.includes("add to cart")
           ? "low"
           : "unknown",
-    demonstrability: lower.match(/demo|before|after|how it works|tutorial/) ? "strong" : "mixed",
+    demonstrability:
+      /demo|before|after|how it works|tutorial|(?:create|generate|edit|produce) (?:ai )?(?:images?|videos?|photos?|visuals?)/.test(
+        lower,
+      )
+        ? "strong"
+        : "mixed",
     trustRequirement: riskTags.length ? "high" : "medium",
     repeatPurchasePotential: lower.match(/subscription|monthly|refill|membership/)
       ? "high"

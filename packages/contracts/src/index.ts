@@ -130,6 +130,7 @@ export const territoryRecommendationSchema = z.object({
       purchaseInfluenceIntent: z.number().min(0).max(100),
       evidenceStrength: z.number().min(0).max(100),
       incompatibilityPenalty: z.number().min(0).max(100),
+      directEvidenceMatch: z.number().min(0).max(100).optional(),
     })
     .optional(),
   riskCandidateScore: z.number().min(0).max(100).optional(),

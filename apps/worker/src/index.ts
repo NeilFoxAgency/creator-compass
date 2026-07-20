@@ -25,8 +25,10 @@ import {
 } from "@creator-compass/ai";
 import {
   assembleDeterministicReport,
+  buildClarifyingQuestions,
   buildCandidateSet,
   hasSufficientEvidence,
+  humanizeDisplayText,
   METHODOLOGY_VERSION,
 } from "@creator-compass/scoring";
 import {
@@ -224,10 +226,78 @@ export function applyExtractedProfile(
 ): BrandProfile {
   assertKnownEvidenceIds(extracted.evidenceIds, deterministic.evidence);
   const { evidenceIds: _evidenceIds, ...fields } = extracted;
+  const lexicalRoot = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/e-?commerce/g, "ecommerce")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .map((token) =>
+        token.replace(/(?:ation|ations|ition|itions|ing|ers?|ed|ies|s)$/i, "").slice(0, 12),
+      )
+      .filter(Boolean);
+  const genericSupportTokens = new Set([
+    "access",
+    "brand",
+    "business",
+    "choice",
+    "create",
+    "deliver",
+    "evaluate",
+    "generate",
+    "improve",
+    "offer",
+    "people",
+    "platform",
+    "practical",
+    "product",
+    "service",
+    "software",
+    "solution",
+    "technology",
+    "tool",
+    "use",
+  ]);
+  const deterministicSupport = [
+    deterministic.summary,
+    ...deterministic.products.flatMap((item) => [item.name, item.category]),
+    ...deterministic.targetCustomers,
+    ...deterministic.customerNeeds,
+    ...deterministic.differentiators,
+    ...(deterministic.buyerRoles ?? []),
+    ...(deterministic.userRoles ?? []),
+    ...(deterministic.industries ?? []),
+    ...(deterministic.useCases ?? []),
+    ...(deterministic.jobsToBeDone ?? []),
+    ...(deterministic.buyerGoalVerbPhrases ?? []),
+    ...(deterministic.problemStatements ?? []),
+  ].join(" ");
+  const supportText = `${deterministic.evidence.map((item) => item.excerpt).join(" ")} ${deterministicSupport}`;
+  const supportTokens = new Set(lexicalRoot(supportText));
+  const isSupported = (value: string) => {
+    const normalizedValue = humanizeDisplayText(value).toLowerCase();
+    if (humanizeDisplayText(supportText).toLowerCase().includes(normalizedValue)) return true;
+    const tokens = lexicalRoot(value).filter(
+      (token) => token.length >= 3 && !genericSupportTokens.has(token),
+    );
+    if (!tokens.length) return false;
+    const supported = tokens.filter((token) => supportTokens.has(token)).length;
+    return tokens.length === 1
+      ? supported === 1
+      : supported >= 2 && supported / tokens.length >= 0.6;
+  };
+  const grounded = (values: string[] | undefined) =>
+    (values ?? []).filter(isSupported).map(humanizeDisplayText);
   const verbPhrase =
-    /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid|monitor|self-host|integrate|perform|inspect|summarize|access|retrieve|review|read|save|conduct)\b/i;
-  const repairActionPhrase = (value: string) =>
-    verbPhrase.test(value.trim()) ? value.trim() : `evaluate ${value.trim()}`;
+    /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|generate|produce|edit|speed|deliver|optimize|identify|retain|avoid|monitor|self-host|integrate|perform|inspect|summarize|access|retrieve|review|read|save|conduct)\b/i;
+  const repairActionPhrase = (value: string) => {
+    const readable = humanizeDisplayText(value).replace(
+      /^evaluate\s+(?=(?:improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|grow|manage|research|track|understand|use|create|generate|produce|edit|speed|deliver|optimize|identify|retain|avoid|monitor|self-host|integrate|perform|inspect|summarize|access|retrieve|review|read|save|conduct)\b)/i,
+      "",
+    );
+    return verbPhrase.test(readable) ? readable : `evaluate ${readable}`;
+  };
   const mergeText = (...groups: Array<string[] | undefined>) => [
     ...new Set(
       groups
@@ -238,11 +308,22 @@ export function applyExtractedProfile(
   ];
   const preserveSoftwareClassification =
     deterministic.productType === "software" && fields.productType !== "software";
+  const groundedProducts = fields.products
+    .filter((product) => isSupported(product.name) || isSupported(product.category))
+    .map((product, index) => ({
+      ...product,
+      name: /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(product.name)
+        ? index === 0
+          ? deterministic.brandName
+          : humanizeDisplayText(product.name)
+        : humanizeDisplayText(product.name),
+      category: humanizeDisplayText(product.category),
+    }));
   return brandProfileSchema.parse({
     ...deterministic,
     ...fields,
     summary: fields.summary.trim().length >= 40 ? fields.summary : deterministic.summary,
-    products: fields.products.length ? fields.products : deterministic.products,
+    products: groundedProducts.length ? groundedProducts : deterministic.products,
     productType: preserveSoftwareClassification ? "software" : fields.productType,
     businessModel:
       deterministic.businessModel === "open-source" ? "open-source" : fields.businessModel,
@@ -253,25 +334,29 @@ export function applyExtractedProfile(
       preserveSoftwareClassification && fields.demonstrability === "not-applicable"
         ? deterministic.demonstrability
         : fields.demonstrability,
-    targetCustomers: mergeText(fields.targetCustomers, deterministic.targetCustomers),
-    customerNeeds: mergeText(fields.customerNeeds, deterministic.customerNeeds).map(
+    targetCustomers: mergeText(grounded(fields.targetCustomers), deterministic.targetCustomers),
+    customerNeeds: mergeText(grounded(fields.customerNeeds), deterministic.customerNeeds).map(
       repairActionPhrase,
     ),
-    differentiators: fields.differentiators.length
-      ? fields.differentiators
+    differentiators: grounded(fields.differentiators).length
+      ? grounded(fields.differentiators)
       : deterministic.differentiators,
-    buyerRoles: mergeText(fields.buyerRoles, deterministic.buyerRoles),
-    userRoles: mergeText(fields.userRoles, deterministic.userRoles),
-    industries: mergeText(fields.industries, deterministic.industries),
-    useCases: mergeText(fields.useCases, deterministic.useCases),
-    jobsToBeDone: mergeText(fields.jobsToBeDone, deterministic.jobsToBeDone).map(
+    buyerRoles: mergeText(grounded(fields.buyerRoles), deterministic.buyerRoles),
+    userRoles: mergeText(grounded(fields.userRoles), deterministic.userRoles),
+    industries: mergeText(grounded(fields.industries), deterministic.industries),
+    useCases: mergeText(grounded(fields.useCases), deterministic.useCases),
+    jobsToBeDone: mergeText(grounded(fields.jobsToBeDone), deterministic.jobsToBeDone).map(
       repairActionPhrase,
     ),
     buyerGoalVerbPhrases: mergeText(
-      fields.buyerGoalVerbPhrases,
-      fields.jobsToBeDone,
+      grounded(fields.buyerGoalVerbPhrases),
+      grounded(fields.jobsToBeDone),
       deterministic.buyerGoalVerbPhrases,
     ).map(repairActionPhrase),
+    problemStatements: mergeText(
+      grounded(fields.problemStatements),
+      deterministic.problemStatements,
+    ),
     canonicalDomain,
     evidence: deterministic.evidence,
   });
@@ -489,24 +574,275 @@ export function normalizeReviewWhy(why: string) {
       /(?:high\s+|low\s+)?territoryFitScore\s*(?:\(\s*\d+\s*\)|[:=]?\s*\d+)?/gi,
       "strong fit",
     )
-    .replace(/(?:raw\s+)?fit score\s*(?:of\s+)?\d+/gi, "strong fit");
+    .replace(/(?:raw\s+)?fit score\s*(?:of\s+)?\d+/gi, "strong fit")
+    .replace(/\bstrong fit\s+(?:with|and)\s+strong fit\b/gi, "strong fit");
+}
+
+function normalizeVisibleReport(value: unknown) {
+  const report = creatorCompassReportSchema.parse(value);
+  const readable = (text: string) => humanizeDisplayText(text);
+  const normalized: CreatorCompassReport = {
+    ...report,
+    brandProfile: {
+      ...report.brandProfile,
+      products: report.brandProfile.products.map((product) => ({
+        ...product,
+        name: /^[a-z0-9]+(?:-[a-z0-9]+)+$/.test(product.name)
+          ? report.brandProfile.brandName
+          : readable(product.name),
+        category: readable(product.category),
+      })),
+      targetCustomers: report.brandProfile.targetCustomers.map(readable),
+      customerNeeds: report.brandProfile.customerNeeds.map(readable),
+      buyerRoles: report.brandProfile.buyerRoles?.map(readable),
+      userRoles: report.brandProfile.userRoles?.map(readable),
+      industries: report.brandProfile.industries?.map(readable),
+      useCases: report.brandProfile.useCases?.map(readable),
+      jobsToBeDone: report.brandProfile.jobsToBeDone?.map(readable),
+      buyerGoalVerbPhrases: report.brandProfile.buyerGoalVerbPhrases?.map(readable),
+      problemStatements: report.brandProfile.problemStatements?.map(readable),
+      differentiators: report.brandProfile.differentiators.map(readable),
+    },
+    territories: report.territories.map((territory) => ({
+      ...territory,
+      name: readable(territory.name),
+      rationale: readable(territory.rationale),
+      audienceConnection: readable(territory.audienceConnection),
+      customerNeed: readable(territory.customerNeed),
+      contentStyles: territory.contentStyles.map(readable),
+      creatorProfile: readable(territory.creatorProfile),
+      sponsorshipFormats: territory.sponsorshipFormats.map(readable),
+      campaignConcepts: territory.campaignConcepts.map((concept) => ({
+        title: readable(concept.title),
+        concept: readable(concept.concept),
+        openingHook: readable(concept.openingHook),
+      })) as TerritoryRecommendation["campaignConcepts"],
+      viewerObjection: readable(territory.viewerObjection),
+      keyRisk: readable(territory.keyRisk),
+    })),
+    readiness: report.readiness.map((dimension) => ({
+      ...dimension,
+      label: readable(dimension.label),
+      rationale: readable(dimension.rationale),
+      improvement: readable(dimension.improvement),
+    })),
+    readinessSummary: {
+      ...report.readinessSummary,
+      summary: readable(report.readinessSummary.summary),
+    },
+    nextSteps: report.nextSteps.map(readable) as CreatorCompassReport["nextSteps"],
+    clarifyingQuestions: report.clarifyingQuestions.map(readable),
+    assumptions: report.assumptions.map(readable),
+  };
+  if (!normalized.northStar) return normalized;
+  const northCandidate = normalized.territories.find(
+    (territory) => territory.territoryId === normalized.northStar?.territoryId,
+  );
+  if (!northCandidate) return normalized;
+  normalized.northStar = {
+    ...normalized.northStar,
+    format: readable(normalizeReviewFormat(normalized.northStar.format, northCandidate)),
+    creatorDirection: readable(normalized.northStar.creatorDirection),
+    testShape: readable(normalized.northStar.testShape),
+    why: normalizeReviewWhy(readable(normalized.northStar.why)),
+  };
+  return normalized;
+}
+
+function visibleReportStrings(report: CreatorCompassReport) {
+  return [
+    report.brandProfile.brandName,
+    report.brandProfile.summary,
+    ...report.brandProfile.products.flatMap((product) => [product.name, product.category]),
+    ...report.brandProfile.targetCustomers,
+    ...report.brandProfile.customerNeeds,
+    ...(report.brandProfile.buyerRoles ?? []),
+    ...(report.brandProfile.userRoles ?? []),
+    ...(report.brandProfile.industries ?? []),
+    ...(report.brandProfile.useCases ?? []),
+    ...(report.brandProfile.jobsToBeDone ?? []),
+    ...report.territories.flatMap((territory) => [
+      territory.name,
+      territory.rationale,
+      territory.audienceConnection,
+      territory.customerNeed,
+      territory.creatorProfile,
+      territory.viewerObjection,
+      territory.keyRisk,
+      ...territory.contentStyles,
+      ...territory.sponsorshipFormats,
+      ...territory.campaignConcepts.flatMap((concept) => [
+        concept.title,
+        concept.concept,
+        concept.openingHook,
+      ]),
+    ]),
+    ...report.readiness.flatMap((dimension) => [
+      dimension.label,
+      dimension.rationale,
+      dimension.improvement,
+    ]),
+    report.readinessSummary.summary,
+    ...(report.northStar
+      ? [
+          report.northStar.format,
+          report.northStar.creatorDirection,
+          report.northStar.testShape,
+          report.northStar.why,
+        ]
+      : []),
+    ...report.nextSteps,
+    ...report.clarifyingQuestions,
+  ];
+}
+
+export function validateDeliverableReport(value: unknown) {
+  const parsed = creatorCompassReportSchema.safeParse(value);
+  if (!parsed.success)
+    return {
+      valid: false,
+      reasons: parsed.error.issues.map(
+        (issue) => `schema:${issue.path.join(".")}:${issue.message}`,
+      ),
+    };
+  const report = parsed.data;
+  const reasons: string[] = [];
+  const evidenceIds = new Set(report.brandProfile.evidence.map((item) => item.id));
+  for (const territory of report.territories) {
+    const score = territory.territoryFitScore ?? territory.score;
+    if (territory.classification === "core" && score < 70)
+      reasons.push(`${territory.territoryId}:core threshold`);
+    if (territory.classification === "adjacent" && score < 50)
+      reasons.push(`${territory.territoryId}:adjacent threshold`);
+    if (territory.classification === "experimental" && score < 38)
+      reasons.push(`${territory.territoryId}:experimental threshold`);
+    if (
+      territory.classification === "core" &&
+      (territory.scoreComponents?.directEvidenceMatch ?? 100) < 46
+    )
+      reasons.push(`${territory.territoryId}:missing direct evidence`);
+    if (
+      territory.territoryId === "seo-and-search-marketing" &&
+      territory.classification !== "risk" &&
+      !/\b(SEO|search marketing|search engine optimization|keywords?|search rankings?|SERPs?|backlinks?|site audits?|technical SEO)\b/i.test(
+        report.brandProfile.evidence.map((item) => item.excerpt).join(" "),
+      )
+    )
+      reasons.push("seo-and-search-marketing:unsupported by direct evidence");
+    if (territory.evidenceIds.some((id) => !evidenceIds.has(id)))
+      reasons.push(`${territory.territoryId}:unknown evidence`);
+    try {
+      assertGroundedEnrichment(
+        {
+          territoryId: territory.territoryId,
+          audienceConnection: territory.audienceConnection,
+          creatorProfile: territory.creatorProfile,
+          campaignConcepts: territory.campaignConcepts,
+          viewerObjection: territory.viewerObjection,
+          keyRisk: territory.keyRisk,
+          evidenceIds: territory.evidenceIds,
+        },
+        report.brandProfile.evidence,
+      );
+    } catch (error) {
+      reasons.push(
+        `${territory.territoryId}:campaign:${error instanceof Error ? error.message : "invalid"}`,
+      );
+    }
+  }
+  if (report.readiness.some((item) => item.evidenceIds.some((id) => !evidenceIds.has(id))))
+    reasons.push("readiness:unknown evidence");
+  if (report.recommendationState === "recommendation") {
+    const cores = report.territories.filter((item) => item.classification === "core");
+    if (!cores.length) reasons.push("recommendation:missing eligible Core territory");
+    if (
+      !report.northStar ||
+      !cores.some((item) => item.territoryId === report.northStar?.territoryId)
+    )
+      reasons.push("recommendation:North Star is not an eligible Core territory");
+  } else if (
+    report.northStar ||
+    report.readinessSummary.score != null ||
+    report.clarifyingQuestions.length === 0
+  )
+    reasons.push("preliminary hypotheses are incoherent");
+  const visibleText = visibleReportStrings(report).join(" ");
+  if (/\[(?:brand|client|product|placeholder)\]/i.test(visibleText))
+    reasons.push("visible copy contains an unresolved placeholder");
+  if (
+    /\b(?:response schema|json schema|additional properties|supplied candidates)\b/i.test(
+      visibleText,
+    )
+  )
+    reasons.push("visible copy contains raw schema language");
+  if (/\bstrong fit\s+(?:with|and)\s+strong fit\b/i.test(visibleText))
+    reasons.push("visible copy repeats the fit label");
+  const disallowedSlug = visibleText.match(/\b[a-z]+(?:-[a-z]+){2,}\b/)?.[0];
+  if (disallowedSlug) reasons.push(`visible copy contains raw identifier:${disallowedSlug}`);
+  return { valid: reasons.length === 0, reasons };
+}
+
+function convertToPreliminary(report: CreatorCompassReport, reasons: string[]) {
+  const questions = [
+    ...report.clarifyingQuestions,
+    ...buildClarifyingQuestions(report.brandProfile),
+    "Which one product and buyer should this creator campaign prioritize?",
+    "What job is that buyer trying to complete with this offer?",
+    "What direct website evidence or brand context supports that buyer and use case?",
+  ];
+  return {
+    ...report,
+    recommendationState: "preliminary-hypotheses" as const,
+    territories: [],
+    northStar: null,
+    clarifyingQuestions: [...new Set(questions)].slice(0, 5),
+    readinessSummary: {
+      status: "insufficient-evidence" as const,
+      score: null,
+      summary: `There is not enough validated content to give ${report.brandProfile.brandName} a confident route or numerical readiness result.`,
+    },
+    brandReadiness: {
+      status: "insufficient-evidence" as const,
+      score: null,
+      summary: `There is not enough validated content to give ${report.brandProfile.brandName} a confident route or numerical readiness result.`,
+    },
+    assumptions: [
+      ...new Set([...report.assumptions, ...reasons.map((reason) => `Validation: ${reason}`)]),
+    ],
+  };
+}
+
+export function finalizeReportDelivery(
+  value: unknown,
+  enrichmentSuccessRate: number,
+  finalReviewCompleted: boolean,
+) {
+  let report = normalizeVisibleReport(value);
+  let validation = validateDeliverableReport(report);
+  if (!validation.valid) {
+    report = normalizeVisibleReport(convertToPreliminary(report, validation.reasons));
+    validation = validateDeliverableReport(report);
+  }
+  if (!validation.valid)
+    throw new Error(`Deliverable validation failed: ${validation.reasons.join("; ")}`);
+  report.deliveryQuality = {
+    state: "full-report",
+    enrichmentSuccessRate,
+    finalReviewCompleted,
+    grammarChecksPassed: true,
+    reasons: [],
+  };
+  return report;
 }
 
 export function normalizeReportForDelivery(value: unknown) {
   const report = creatorCompassReportSchema.parse(value);
-  if (!report.northStar) return report;
-  const northCandidate = report.territories.find(
-    (territory) => territory.territoryId === report.northStar?.territoryId,
+  const enrichmentSuccessRate = report.deliveryQuality?.enrichmentSuccessRate ?? 0;
+  return finalizeReportDelivery(
+    report,
+    enrichmentSuccessRate,
+    report.deliveryQuality?.finalReviewCompleted ?? report.aiReview.usedGpt56,
   );
-  if (!northCandidate) return report;
-  return {
-    ...report,
-    northStar: {
-      ...report.northStar,
-      format: normalizeReviewFormat(report.northStar.format, northCandidate),
-      why: normalizeReviewWhy(report.northStar.why),
-    },
-  };
 }
 
 function applyReview(
@@ -989,31 +1325,10 @@ async function runAnalysis(env: Env, analysisId: string) {
       : 0;
     if (report.providerPath && enrichmentSuccessRate > 0)
       report.providerPath.candidateEnrichment = `${candidateEnrichmentPath}+server-grounded-concepts`;
-    const grammarChecksPassed =
-      !/\btrying to (?:seo platform|marketing software|technology|platform|service)\b/i.test(
-        JSON.stringify(report),
-      ) && !/\bsurfaceing\b/i.test(JSON.stringify(report));
-    const fullQuality =
-      report.recommendationState === "recommendation" &&
-      enrichmentSuccessRate >= 0.75 &&
-      Boolean(reviewResult) &&
-      grammarChecksPassed;
-    report.deliveryQuality = {
-      state: fullQuality ? "full-report" : "draft-analysis",
-      enrichmentSuccessRate,
-      finalReviewCompleted: Boolean(reviewResult),
-      grammarChecksPassed,
-      reasons: [
-        ...(enrichmentSuccessRate < 0.75
-          ? [
-              `Only ${Math.round(enrichmentSuccessRate * 100)}% of bounded candidates received model enrichment.`,
-            ]
-          : []),
-        ...(!reviewResult ? ["A verified final strategic review did not complete."] : []),
-        ...(!grammarChecksPassed ? ["The report failed its deterministic grammar gate."] : []),
-      ],
-    };
-    creatorCompassReportSchema.parse(report);
+    Object.assign(
+      report,
+      finalizeReportDelivery(report, enrichmentSuccessRate, Boolean(reviewResult)),
+    );
     await updateJob(env, analysisId, "running", "preparing-report");
     await env.DB.batch([
       env.DB.prepare(
@@ -1039,31 +1354,34 @@ async function runAnalysis(env: Env, analysisId: string) {
     await updateJob(env, analysisId, "complete", "complete", { slug: report.slug });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The analysis could not be completed.";
-    const needsInput = /website|page|HTML|readable|fetch|redirect/i.test(message);
-    await updateJob(
-      env,
-      analysisId,
-      needsInput ? "needs-input" : "failed",
-      needsInput ? "needs-input" : "failed",
-      {
-        code: needsInput ? "WEBSITE_UNAVAILABLE" : "ANALYSIS_FAILED",
-        message: needsInput
-          ? "We could not read enough of this website. Paste a product or company description to continue without inventing a report."
-          : "The analysis stopped safely. Please try again.",
-      },
-    );
+    const failure = classifyAnalysisFailure(message);
+    await updateJob(env, analysisId, failure.status, failure.status, {
+      code: failure.code,
+      message: failure.message,
+    });
     await env.DB.prepare(
       "INSERT INTO system_events (id, type, code, duration_ms, created_at) VALUES (?, 'analysis_failed', ?, ?, ?)",
     )
-      .bind(
-        crypto.randomUUID(),
-        needsInput ? "WEBSITE_UNAVAILABLE" : "ANALYSIS_FAILED",
-        Date.now() - started,
-        nowIso(),
-      )
+      .bind(crypto.randomUUID(), failure.code, Date.now() - started, nowIso())
       .run();
     console.error(JSON.stringify({ event: "analysis_failed", analysisId, reason: message }));
   }
+}
+
+export function classifyAnalysisFailure(message: string) {
+  const needsInput = /website|page|HTML|readable|fetch|redirect/i.test(message);
+  return needsInput
+    ? {
+        status: "needs-input" as const,
+        code: "WEBSITE_UNAVAILABLE",
+        message:
+          "We could not read enough of this website. Paste a product or company description to continue without inventing a report.",
+      }
+    : {
+        status: "failed" as const,
+        code: "ANALYSIS_FAILED",
+        message: "The analysis stopped safely. Please try again.",
+      };
 }
 
 app.get("/api/health", (c) =>

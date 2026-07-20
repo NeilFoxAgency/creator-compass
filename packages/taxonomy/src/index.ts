@@ -119,6 +119,20 @@ const seeds: Seed[] = [
     "hype|weak purchase intent",
   ],
   [
+    "AI image and video creation",
+    "creative production|visual storytelling|faster content creation",
+    "generation walkthroughs|model comparisons|creative experiments",
+    "software|visual|demonstrable",
+    "quality claims|model limitations|rights",
+  ],
+  [
+    "Creative AI and design workflows",
+    "creative control|production efficiency|design exploration",
+    "workflow demonstrations|design breakdowns|before and after",
+    "software|visual|creative",
+    "rights|brand consistency|unsupported outcomes",
+  ],
+  [
     "Consumer technology",
     "capability|convenience|novelty",
     "reviews|comparisons|setup guides",
@@ -848,6 +862,63 @@ const technicalMetadata: Record<string, Partial<TerritoryMetadata>> = {
     superficialMatchRisks: ["AI", "agent", "MCP"],
     purchaseIntent: "low",
   },
+  "ai-image-and-video-creation": {
+    audienceType: "mixed",
+    buyerRoles: ["content creator", "creative marketer", "e-commerce marketer"],
+    userRoles: ["AI image creator", "AI video creator", "visual content producer"],
+    industries: ["creative production", "marketing", "e-commerce", "design"],
+    useCases: [
+      "AI image generation",
+      "AI video generation",
+      "product photography",
+      "product avatar video",
+      "visual content production",
+    ],
+    jobsToBeDone: [
+      "create AI images",
+      "generate AI videos",
+      "produce product visuals",
+      "speed up creative production",
+    ],
+    categorySignals: [
+      "AI image generator",
+      "AI video generator",
+      "text to video",
+      "image to video",
+      "product photography",
+      "visual content creation",
+    ],
+    compatibleBusinessModels: ["saas", "subscription"],
+    compatibleProductTypes: ["software", "digital-product"],
+    purchaseIntent: "high",
+  },
+  "creative-ai-and-design-workflows": {
+    audienceType: "mixed",
+    buyerRoles: ["creative director", "designer", "content creator", "creative marketer"],
+    userRoles: ["designer", "creative producer", "content creator"],
+    industries: ["design", "creative production", "marketing", "e-commerce"],
+    useCases: [
+      "creative AI workflow",
+      "design workflow",
+      "ad creative production",
+      "e-commerce content creation",
+    ],
+    jobsToBeDone: [
+      "produce visual content",
+      "explore creative concepts",
+      "create product marketing assets",
+    ],
+    categorySignals: [
+      "creative AI",
+      "design workflow",
+      "creative production",
+      "AI creative tools",
+      "ad images",
+    ],
+    compatibleBusinessModels: ["saas", "subscription", "service"],
+    compatibleProductTypes: ["software", "digital-product", "service"],
+    purchaseIntent: "high",
+  },
   "consumer-technology": {
     buyerRoles: ["consumer technology buyer"],
     userRoles: ["technology consumer"],
@@ -860,7 +931,7 @@ const technicalMetadata: Record<string, Partial<TerritoryMetadata>> = {
 };
 
 const b2bNames =
-  /SEO|AI agents|Developer tools|Open source|SaaS|Web development|Growth marketing|Agency operations|No-code|E-commerce growth|Entrepreneurship|Marketing education|E-commerce operations|Creator business|Freelancing|Leadership and management/i;
+  /SEO|AI agents|Developer tools|Open source|SaaS|Web development|Growth marketing|Agency operations|No-code|E-commerce growth|AI image and video|Creative AI|Entrepreneurship|Marketing education|E-commerce operations|Creator business|Freelancing|Leadership and management/i;
 const lifestyleNames =
   /Beauty|Fashion|Gaming|Gardening|Camping|Skincare|Hair care|Fragrance|Cooking|Fitness|Wellness|Interior|Pet care|Outdoor|Travel|Parenting|Wedding|Coffee|Cycling|Running|Water sports|Zero-waste/i;
 

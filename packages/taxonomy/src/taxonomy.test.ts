@@ -20,6 +20,8 @@ describe("creator territory taxonomy", () => {
       "agency-operations",
       "no-code-and-business-automation",
       "e-commerce-growth",
+      "ai-image-and-video-creation",
+      "creative-ai-and-design-workflows",
     ];
     for (const id of required) {
       const territory = creatorTerritories.find((item) => item.id === id);

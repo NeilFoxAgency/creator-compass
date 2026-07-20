@@ -5,10 +5,13 @@ import {
   applyCandidateEnrichment,
   applyExtractedProfile,
   assertReviewQuality,
+  classifyAnalysisFailure,
+  finalizeReportDelivery,
   normalizeReviewFormat,
   normalizeReviewWhy,
   normalizeReportForDelivery,
   prepareEvidenceForModel,
+  validateDeliverableReport,
 } from "./index";
 
 const profile: BrandProfile = {
@@ -44,6 +47,40 @@ const profile: BrandProfile = {
   ],
 };
 
+const recommendableProfile: BrandProfile = {
+  ...profile,
+  canonicalDomain: "searchkit.example",
+  brandName: "SearchKit",
+  summary:
+    "SearchKit is SEO software for marketers who research keywords, analyze backlinks, and audit websites.",
+  products: [{ name: "SearchKit", category: "SEO software" }],
+  targetCustomers: ["SEO professionals", "digital marketers"],
+  customerNeeds: ["research keyword opportunities", "audit website SEO"],
+  audienceType: "b2b",
+  buyerRoles: ["SEO professional", "growth marketer"],
+  userRoles: ["SEO specialist"],
+  industries: ["marketing", "software"],
+  useCases: ["keyword research", "backlink analysis", "site audits"],
+  jobsToBeDone: ["research keyword opportunities", "analyze backlinks", "audit website SEO"],
+  buyerGoalVerbPhrases: ["research keyword opportunities", "audit website SEO"],
+  differentiators: ["keyword research and backlink analysis"],
+  evidence: [
+    {
+      id: "seo-1",
+      sourceUrl: "https://searchkit.example",
+      excerpt:
+        "SearchKit is SEO software for keyword research, backlink analysis, and website site audits.",
+      kind: "website",
+    },
+    {
+      id: "seo-2",
+      sourceUrl: "https://searchkit.example/features",
+      excerpt: "SEO professionals use SearchKit to research keywords and audit website SEO.",
+      kind: "website",
+    },
+  ],
+};
+
 const extracted = {
   brandName: "Model Name",
   summary: profile.summary,
@@ -62,6 +99,51 @@ const extracted = {
 };
 
 describe("server-owned evidence provenance", () => {
+  it("delivers a valid deterministic fallback as a normal report", () => {
+    const report = assembleDeterministicReport(recommendableProfile);
+    expect(report.recommendationState).toBe("recommendation");
+    const delivered = finalizeReportDelivery(report, 0, false);
+    expect(delivered.deliveryQuality).toMatchObject({
+      state: "full-report",
+      finalReviewCompleted: false,
+    });
+    expect(validateDeliverableReport(delivered).valid).toBe(true);
+  });
+
+  it("keeps insufficient evidence as coherent preliminary hypotheses", () => {
+    const report = assembleDeterministicReport({
+      ...profile,
+      products: [],
+      targetCustomers: [],
+      customerNeeds: [],
+      evidence: profile.evidence.slice(0, 1),
+    });
+    const delivered = finalizeReportDelivery(report, 0, false);
+    expect(delivered.recommendationState).toBe("preliminary-hypotheses");
+    expect(delivered.northStar).toBeNull();
+    expect(delivered.readinessSummary.score).toBeNull();
+    expect(delivered.deliveryQuality?.state).toBe("full-report");
+  });
+
+  it("repairs an invalid deterministic recommendation into preliminary hypotheses", () => {
+    const report = assembleDeterministicReport(recommendableProfile);
+    report.territories = report.territories.map((territory) =>
+      territory.classification === "core"
+        ? { ...territory, score: 20, territoryFitScore: 20 }
+        : territory,
+    );
+    const delivered = finalizeReportDelivery(report, 0, false);
+    expect(delivered.recommendationState).toBe("preliminary-hypotheses");
+    expect(delivered.northStar).toBeNull();
+    expect(delivered.territories).toEqual([]);
+  });
+
+  it("classifies an unreadable website as needs-input", () => {
+    expect(classifyAnalysisFailure("The website did not provide readable HTML.")).toMatchObject({
+      status: "needs-input",
+      code: "WEBSITE_UNAVAILABLE",
+    });
+  });
   it("overrides the model domain and restores immutable evidence records", () => {
     const result = applyExtractedProfile(profile, "canonical.example", extracted);
     expect(result.canonicalDomain).toBe("canonical.example");
@@ -77,16 +159,61 @@ describe("server-owned evidence provenance", () => {
     expect(result.products).toEqual(profile.products);
   });
 
-  it("repairs noun fragments in action fields before they can enter prose", () => {
+  it("drops unsupported model fields before they can enter scoring or prose", () => {
     const result = applyExtractedProfile(profile, "canonical.example", {
       ...extracted,
-      customerNeeds: ["SEO platform"],
-      jobsToBeDone: ["marketing software"],
-      buyerGoalVerbPhrases: ["technology"],
+      customerNeeds: ["research keyword opportunities"],
+      jobsToBeDone: ["audit website SEO"],
+      buyerGoalVerbPhrases: ["analyze SERPs"],
+      useCases: ["rank tracking"],
     });
-    expect(result.customerNeeds).toEqual(expect.arrayContaining(["evaluate SEO platform"]));
-    expect(result.jobsToBeDone).toEqual(expect.arrayContaining(["evaluate marketing software"]));
-    expect(result.buyerGoalVerbPhrases).toEqual(expect.arrayContaining(["evaluate technology"]));
+    expect(JSON.stringify(result)).not.toMatch(/keyword|SEO|SERP|rank tracking/i);
+    expect(result.customerNeeds).toContain("choose priorities");
+  });
+
+  it("keeps evidence-supported Loova fields while removing hallucinated SEO semantics", () => {
+    const loovaEvidence = [
+      {
+        id: "web-1-1",
+        sourceUrl: "https://loova.ai/",
+        excerpt:
+          "Loova brings together AI image and video models including Sora, Veo, Kling, and Seedance. Create AI images and videos and speed up creative production.",
+        kind: "website" as const,
+      },
+      {
+        id: "web-1-2",
+        sourceUrl: "https://loova.ai/product",
+        excerpt: "Generate product photos and edit videos for visual content production.",
+        kind: "website" as const,
+      },
+    ];
+    const deterministic = {
+      ...profile,
+      canonicalDomain: "loova.ai",
+      brandName: "Loova AI",
+      summary: loovaEvidence[0]!.excerpt,
+      products: [{ name: "Loova AI", category: "software" }],
+      customerNeeds: ["create AI images"],
+      useCases: ["AI image generation", "AI video generation"],
+      jobsToBeDone: ["create AI images", "generate AI videos"],
+      buyerGoalVerbPhrases: ["create AI images", "generate AI videos"],
+      evidence: loovaEvidence,
+    } satisfies BrandProfile;
+    const result = applyExtractedProfile(deterministic, "loova.ai", {
+      ...extracted,
+      brandName: "Loova AI",
+      summary: deterministic.summary,
+      products: [{ name: "ai-image-generator", category: "ai-image-generation" }],
+      customerNeeds: ["research keyword opportunities", "create AI images"],
+      useCases: ["site-audits", "ai-video-generation"],
+      jobsToBeDone: ["analyze SERPs", "generate AI videos"],
+      buyerGoalVerbPhrases: ["research backlinks", "speed up creative production"],
+      differentiators: ["multiple AI image and video models"],
+      evidenceIds: ["web-1-1", "web-1-2"],
+    });
+    expect(JSON.stringify(result)).not.toMatch(/keyword|SERP|backlink|site audit/i);
+    expect(result.useCases).toEqual(expect.arrayContaining(["AI video generation"]));
+    expect(result.products[0]?.name).toBe("Loova AI");
   });
 
   it("does not let model extraction downgrade evidence-classified software to a service", () => {
@@ -309,7 +436,7 @@ describe("server-owned evidence provenance", () => {
   });
 
   it("normalizes persisted North Star prose at delivery time", () => {
-    const report = assembleDeterministicReport(profile);
+    const report = assembleDeterministicReport(recommendableProfile);
     const candidate = report.territories[0]!;
     expect(
       normalizeReportForDelivery({
