@@ -159,6 +159,7 @@ describe("server-owned evidence provenance", () => {
     expect(enriched[0]?.territoryFitScore).toBe(first.territoryFitScore);
     expect(enriched[0]?.scoreComponents).toEqual(first.scoreComponents);
     expect(enriched[0]?.audienceConnection).toBe("Specific connection");
+    expect(enriched[0]?.campaignConcepts).toEqual(first.campaignConcepts);
     expect(() =>
       applyCandidateEnrichment(
         candidates,
@@ -200,6 +201,7 @@ describe("server-owned evidence provenance", () => {
           candidates: [
             {
               ...base,
+              audienceConnection: "[Brand] guarantees a 35% lift for this audience.",
               campaignConcepts: [
                 {
                   title: "[Brand] case study",
@@ -226,13 +228,13 @@ describe("server-owned evidence provenance", () => {
           candidates: [
             {
               territoryId: first.territoryId,
-              audienceConnection: "A grounded audience connection",
+              audienceConnection: "The product automatically sends daily alerts to this audience.",
               creatorProfile: "A practical educator",
               campaignConcepts: [
                 {
-                  title: "Daily alerts",
+                  title: "Grounded workflow",
                   concept:
-                    "Show viewers how the product automatically sends daily alerts about priorities.",
+                    "Show viewers how the documented product supports the audience's actual workflow.",
                   openingHook: "Never miss a priority change",
                 },
                 {
@@ -253,36 +255,35 @@ describe("server-owned evidence provenance", () => {
     ).toThrow(/unsupported product capability/);
   });
 
-  it("rejects a campaign title repeated as an undeveloped concept", () => {
+  it("does not deliver a model title repeated as an undeveloped concept", () => {
     const candidates = buildCandidateSet(profile, 12);
     const first = candidates[0]!;
-    expect(() =>
-      applyCandidateEnrichment(
-        candidates,
-        {
-          candidates: [
-            {
-              territoryId: first.territoryId,
-              audienceConnection: "A grounded audience connection",
-              creatorProfile: "A practical educator",
-              campaignConcepts: [
-                { title: "Workflow guide", concept: "Workflow guide", openingHook: "Start here" },
-                {
-                  title: "Comparison",
-                  concept:
-                    "Compare the documented workflow with the audience's current manual process.",
-                  openingHook: "What changes?",
-                },
-              ],
-              viewerObjection: "Viewers may question fit",
-              keyRisk: "The connection could feel forced",
-              evidenceIds: ["web-1-1"],
-            },
-          ],
-        },
-        profile.evidence,
-      ),
-    ).toThrow(/underdeveloped campaign concept/);
+    const result = applyCandidateEnrichment(
+      candidates,
+      {
+        candidates: [
+          {
+            territoryId: first.territoryId,
+            audienceConnection: "A grounded audience connection",
+            creatorProfile: "A practical educator",
+            campaignConcepts: [
+              { title: "Workflow guide", concept: "Workflow guide", openingHook: "Start here" },
+              {
+                title: "Comparison",
+                concept:
+                  "Compare the documented workflow with the audience's current manual process.",
+                openingHook: "What changes?",
+              },
+            ],
+            viewerObjection: "Viewers may question fit",
+            keyRisk: "The connection could feel forced",
+            evidenceIds: ["web-1-1"],
+          },
+        ],
+      },
+      profile.evidence,
+    );
+    expect(result[0]?.campaignConcepts).toEqual(first.campaignConcepts);
   });
 
   it("replaces schema-error prose returned as a North Star format", () => {

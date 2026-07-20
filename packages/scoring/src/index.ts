@@ -296,7 +296,7 @@ function safeGoal(profile: BrandProfile, territory: CreatorTerritory) {
     ...profile.customerNeeds,
   ];
   const verb =
-    /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid)\b/i;
+    /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid|monitor|self-host|integrate|perform|inspect|summarize|access|retrieve|review|read|save|conduct)\b/i;
   const matched = candidates.find(
     (item) =>
       verb.test(item.trim()) && territory.jobsToBeDone.some((job) => phraseMatch(item, job) >= 42),

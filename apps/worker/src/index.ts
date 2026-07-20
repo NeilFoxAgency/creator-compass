@@ -225,7 +225,7 @@ export function applyExtractedProfile(
   assertKnownEvidenceIds(extracted.evidenceIds, deterministic.evidence);
   const { evidenceIds: _evidenceIds, ...fields } = extracted;
   const verbPhrase =
-    /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid|monitor|self-host)\b/i;
+    /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid|monitor|self-host|integrate|perform|inspect|summarize|access|retrieve|review|read|save|conduct)\b/i;
   const repairActionPhrase = (value: string) =>
     verbPhrase.test(value.trim()) ? value.trim() : `evaluate ${value.trim()}`;
   const preserveSoftwareClassification =
@@ -270,16 +270,25 @@ export function applyCandidateEnrichment(
   enrichment: CandidateEnrichment,
   evidence: BrandProfile["evidence"],
 ) {
-  const candidateIds = new Set(candidates.map((item) => item.territoryId));
+  const candidateById = new Map(candidates.map((item) => [item.territoryId, item]));
+  const candidateIds = new Set(candidateById.keys());
   const seen = new Set<string>();
+  const groundedItems: CandidateEnrichment["candidates"] = [];
   for (const item of enrichment.candidates) {
     if (!candidateIds.has(item.territoryId) || seen.has(item.territoryId))
       throw new Error(`Model returned an invalid territory ID: ${item.territoryId}`);
     seen.add(item.territoryId);
     assertKnownEvidenceIds(item.evidenceIds, evidence);
-    assertGroundedEnrichment(item, evidence);
+    const groundedItem = {
+      ...item,
+      // Free-form model copy is advisory. Delivered concepts remain server-owned and are built
+      // from validated profile fields plus territory metadata, like scores and evidence records.
+      campaignConcepts: candidateById.get(item.territoryId)!.campaignConcepts,
+    };
+    assertGroundedEnrichment(groundedItem, evidence);
+    groundedItems.push(groundedItem);
   }
-  const enriched = new Map(enrichment.candidates.map((item) => [item.territoryId, item]));
+  const enriched = new Map(groundedItems.map((item) => [item.territoryId, item]));
   return candidates.map((candidate) => {
     const fields = enriched.get(candidate.territoryId);
     return fields
@@ -868,6 +877,8 @@ async function runAnalysis(env: Env, analysisId: string) {
     const enrichmentSuccessRate = candidates.length
       ? enrichedCandidateCount / candidates.length
       : 0;
+    if (report.providerPath && enrichmentSuccessRate > 0)
+      report.providerPath.candidateEnrichment = `${candidateEnrichmentPath}+server-grounded-concepts`;
     const grammarChecksPassed =
       !/\btrying to (?:seo platform|marketing software|technology|platform|service)\b/i.test(
         JSON.stringify(report),
