@@ -725,6 +725,14 @@ export function validateDeliverableReport(value: unknown) {
   const report = parsed.data;
   const reasons: string[] = [];
   const evidenceIds = new Set(report.brandProfile.evidence.map((item) => item.id));
+  const affirmativeEvidence = report.brandProfile.evidence
+    .map((item) => item.excerpt)
+    .join(" ")
+    .replace(
+      /\b(?:do(?:es)?|did|is|are|was|were|has|have|had|can|could|will|would|should|must)\s+not\b[^.!?\n]*/gi,
+      " ",
+    )
+    .replace(/\b(?:no|without)\s+(?:claims?\s+(?:of|about)\s+)?[^.!?\n]*/gi, " ");
   for (const territory of report.territories) {
     const score = territory.territoryFitScore ?? territory.score;
     if (territory.classification === "core" && score < 70)
@@ -739,10 +747,15 @@ export function validateDeliverableReport(value: unknown) {
     )
       reasons.push(`${territory.territoryId}:missing direct evidence`);
     if (
+      territory.classification !== "risk" &&
+      (territory.scoreComponents?.directEvidenceMatch ?? 100) < 42
+    )
+      reasons.push(`${territory.territoryId}:missing direct recommendation evidence`);
+    if (
       territory.territoryId === "seo-and-search-marketing" &&
       territory.classification !== "risk" &&
       !/\b(SEO|search marketing|search engine optimization|keywords?|search rankings?|SERPs?|backlinks?|site audits?|technical SEO)\b/i.test(
-        report.brandProfile.evidence.map((item) => item.excerpt).join(" "),
+        affirmativeEvidence,
       )
     )
       reasons.push("seo-and-search-marketing:unsupported by direct evidence");

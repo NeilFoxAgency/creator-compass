@@ -41,7 +41,7 @@ const normalize = (value: string) =>
 export function humanizeDisplayText(value: string) {
   return value
     .replace(/[-_]+/g, " ")
-    .replace(/\becommerce\b/gi, "e-commerce")
+    .replace(/\be\s+commerce\b/gi, "e-commerce")
     .replace(/\bseo\b/gi, "SEO")
     .replace(/\bai\b/gi, "AI")
     .replace(/\bmcp\b/gi, "MCP")
@@ -53,10 +53,22 @@ export function humanizeDisplayText(value: string) {
     .trim();
 }
 
-const meaningfulTokens = (value: string) =>
-  normalize(value)
-    .split(" ")
-    .filter((word) => word.length > 2 && !genericMatchWords.has(word));
+const meaningfulTokens = (value: string) => [
+  ...new Set(
+    normalize(value)
+      .split(" ")
+      .filter((word) => word.length > 2 && !genericMatchWords.has(word)),
+  ),
+];
+
+function affirmativeEvidence(value: string) {
+  return value
+    .replace(
+      /\b(?:do(?:es)?|did|is|are|was|were|has|have|had|can|could|will|would|should|must)\s+not\b[^.!?\n]*/gi,
+      " ",
+    )
+    .replace(/\b(?:no|without)\s+(?:claims?\s+(?:of|about)\s+)?[^.!?\n]*/gi, " ");
+}
 
 function phraseMatch(left: string, right: string) {
   const a = normalize(left);
@@ -88,7 +100,7 @@ function maxFacetMatch(left: string[], right: string[]) {
 }
 
 const evidenceText = (profile: BrandProfile) =>
-  profile.evidence.map((item) => item.excerpt.toLowerCase()).join(" ");
+  profile.evidence.map((item) => affirmativeEvidence(item.excerpt).toLowerCase()).join(" ");
 
 const profileText = (profile: BrandProfile) =>
   [
@@ -190,7 +202,7 @@ function scoreTerritoryDetailed(
     territory.jobsToBeDone,
   );
   const directEvidenceMatch = maxFacetMatch(
-    profile.evidence.map((item) => item.excerpt),
+    profile.evidence.map((item) => affirmativeEvidence(item.excerpt)),
     [
       ...categoryTargets,
       ...territory.buyerRoles,
@@ -531,7 +543,12 @@ export function rankRiskCandidates(profile: BrandProfile) {
 
 export function buildCandidateSet(profile: BrandProfile, count = 12): TerritoryRecommendation[] {
   const eligible = rankTerritories(profile)
-    .filter((item) => item.eligible && item.territoryFitScore >= 38)
+    .filter(
+      (item) =>
+        item.eligible &&
+        item.territoryFitScore >= 38 &&
+        item.scoreComponents.directEvidenceMatch >= 42,
+    )
     .slice(0, Math.max(0, count - 2))
     .map((item) => recommendation(profile, item, "adjacent"));
   const risks = rankRiskCandidates(profile)
@@ -549,7 +566,12 @@ export function selectPortfolio(profile: BrandProfile): TerritoryRecommendation[
     .slice(0, 3);
   const coreIds = new Set(coreScores.map((item) => item.territory.id));
   const adjacentScores = ranked
-    .filter((item) => !coreIds.has(item.territory.id) && item.territoryFitScore >= 50)
+    .filter(
+      (item) =>
+        !coreIds.has(item.territory.id) &&
+        item.territoryFitScore >= 50 &&
+        item.scoreComponents.directEvidenceMatch >= 42,
+    )
     .slice(0, 3);
   const selectedIds = new Set([...coreScores, ...adjacentScores].map((item) => item.territory.id));
   const experimentalScores = ranked
@@ -557,7 +579,8 @@ export function selectPortfolio(profile: BrandProfile): TerritoryRecommendation[
       (item) =>
         !selectedIds.has(item.territory.id) &&
         item.territoryFitScore >= 38 &&
-        item.territoryFitScore < 50,
+        item.territoryFitScore < 50 &&
+        item.scoreComponents.directEvidenceMatch >= 42,
     )
     .slice(0, 2);
   const risks = rankRiskCandidates(profile).slice(0, 2);

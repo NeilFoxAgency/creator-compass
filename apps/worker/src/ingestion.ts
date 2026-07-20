@@ -315,7 +315,16 @@ export function deterministicProfile(
       ?.trim() ??
     domain.split(".")[0] ??
     "The brand";
-  const lower = text.toLowerCase();
+  const lower = text
+    .toLowerCase()
+    .replace(
+      /\b(?:do(?:es)?|did|is|are|was|were|has|have|had|can|could|will|would|should|must)\s+not\b[^.!?\n]*/g,
+      " ",
+    )
+    .replace(/\b(?:no|without)\s+(?:claims?\s+(?:of|about)\s+)?[^.!?\n]*/g, " ");
+  const brandName =
+    title.match(/^(.{2,60}?)\s+(?:is|offers|provides|helps|builds|creates)\b/i)?.[1]?.trim() ??
+    title.replace(/\s*[|–—-].*$/, "").slice(0, 80);
   const categories = [
     "software",
     "marketing",
@@ -351,6 +360,10 @@ export function deterministicProfile(
     /founder|saas/.test(lower) ? "SaaS founder" : "",
     /developer|mcp|api|codex|cursor/.test(lower) ? "developer" : "",
     /small business/.test(lower) ? "small-business owner" : "",
+    /content creator/.test(lower) ? "content creator" : "",
+    /creative marketer/.test(lower) ? "creative marketer" : "",
+    /designer/.test(lower) ? "designer" : "",
+    /e.?commerce team/.test(lower) ? "e-commerce team" : "",
   ].filter(Boolean);
   const useCases = [
     /keyword research/.test(lower) ? "keyword research" : "",
@@ -362,7 +375,7 @@ export function deterministicProfile(
     /ai agent/.test(lower) ? "AI agent integration" : "",
     /conversion|landing page/.test(lower) ? "conversion optimization" : "",
     /ai image|image generator/.test(lower) ? "AI image generation" : "",
-    /ai video|video generator|text to video|image to video/.test(lower)
+    /ai video|video generator|text[- ]to[- ]video|image[- ]to[- ]video/.test(lower)
       ? "AI video generation"
       : "",
     /product photograph|product image/.test(lower) ? "product photography" : "",
@@ -377,19 +390,21 @@ export function deterministicProfile(
     /self.host/.test(lower) ? "self-host the software" : "",
     /\bmcp\b|ai agent/.test(lower) ? "connect AI agents to SEO data" : "",
     /ai image|image generator/.test(lower) ? "create AI images" : "",
-    /ai video|video generator|text to video|image to video/.test(lower) ? "generate AI videos" : "",
+    /ai video|video generator|text[- ]to[- ]video|image[- ]to[- ]video/.test(lower)
+      ? "generate AI videos"
+      : "",
     /product photograph|product image/.test(lower) ? "produce product visuals" : "",
     /creative production|visual content/.test(lower) ? "speed up creative production" : "",
   ].filter(Boolean);
   return {
     canonicalDomain: domain,
-    brandName: title.replace(/\s*[|–—-].*$/, "").slice(0, 80),
+    brandName,
     summary: evidence
       .slice(0, 2)
       .map((item) => item.excerpt)
       .join(" ")
       .slice(0, 360),
-    products: [{ name: title.slice(0, 80), category, ...(price ? { priceText: price } : {}) }],
+    products: [{ name: brandName, category, ...(price ? { priceText: price } : {}) }],
     targetCustomers: [
       category === "service"
         ? "business decision-makers"

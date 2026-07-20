@@ -358,6 +358,33 @@ describe("product-aware readiness", () => {
       "strong",
     );
   });
+
+  it("does not treat explicitly negated SEO terms as positive evidence", () => {
+    const profile = {
+      ...loova,
+      evidence: [
+        {
+          id: "loova-negated",
+          sourceUrl: "https://loova.ai/",
+          kind: "website" as const,
+          excerpt:
+            "Loova creates AI images and videos. It does not claim SEO, keyword research, SERPs, backlinks, rank tracking, or site audits.",
+        },
+      ],
+      buyerRoles: ["content creator"],
+      useCases: ["AI image generation", "AI video generation"],
+      jobsToBeDone: ["create AI images", "generate AI videos"],
+    };
+    const report = assembleDeterministicReport(profile);
+    expect(report.territories.map((item) => item.territoryId)).not.toContain(
+      "seo-and-search-marketing",
+    );
+    expect(report.territories.map((item) => item.territoryId)).not.toContain(
+      "ai-agents-and-workflow-automation",
+    );
+    for (const territory of report.territories)
+      expect(territory.scoreComponents?.directEvidenceMatch ?? 0).toBeLessThanOrEqual(100);
+  });
 });
 
 describe("cross-category regressions", () => {
