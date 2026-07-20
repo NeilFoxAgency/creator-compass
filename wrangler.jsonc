@@ -39,7 +39,7 @@
   "vars": {
     "ENVIRONMENT": "production",
     "OPENAI_MODEL": "gpt-5.6-luna",
-    "OPENAI_MAX_DAILY_RUNS": "20",
+    "OPENAI_MAX_DAILY_RUNS": "30",
     "CLOUDFLARE_AI_ENABLED": "true",
     "CLOUDFLARE_PRIMARY_MODEL": "@cf/qwen/qwen3-30b-a3b-fp8",
     "CLOUDFLARE_REVIEW_MODEL": "@cf/openai/gpt-oss-20b",
