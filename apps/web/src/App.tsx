@@ -231,7 +231,7 @@ function LandingPage() {
             <Feature
               number="03"
               title="Territory map"
-              text="Three Core, two Adjacent, one Experimental, and two directions to avoid."
+              text="Strong Core routes, credible adjacent and experimental paths, and tempting directions to avoid."
             />
             <Feature
               number="04"
@@ -546,7 +546,6 @@ function ReportPage({ slug }: { slug: string }) {
 
 function Report({ report }: { report: CreatorCompassReport }) {
   const sample = isSampleReport(report.slug);
-  const draft = report.deliveryQuality?.state === "draft-analysis";
   const initialTerritory =
     (report.northStar
       ? report.territories.find((item) => item.territoryId === report.northStar?.territoryId)
@@ -607,26 +606,6 @@ function Report({ report }: { report: CreatorCompassReport }) {
             {shareStatus && <small role="status">{shareStatus}</small>}
           </div>
         </section>
-        {draft && (
-          <section className="draft-banner" role="status">
-            <div>
-              <span className="section-number">DRAFT ANALYSIS · PROVIDER FALLBACK</span>
-              <h2>This route needs another review pass.</h2>
-              <p>
-                CreatorCompass reduced confidence because model enrichment or final strategic review
-                did not clear the delivery quality gate. Treat the directions as a draft.
-              </p>
-              {report.deliveryQuality?.reasons.map((reason) => (
-                <small key={reason}>{reason}</small>
-              ))}
-            </div>
-            <a
-              href={`/?url=${encodeURIComponent(report.brandProfile.evidence[0]?.sourceUrl ?? `https://${report.brandProfile.canonicalDomain}`)}`}
-            >
-              Regenerate analysis →
-            </a>
-          </section>
-        )}
         {report.northStar ? (
           <section className="north-star">
             <div className="north-symbol">
@@ -695,7 +674,7 @@ function Report({ report }: { report: CreatorCompassReport }) {
               active={active}
               onSelect={setActive}
             />
-            <TerritoryDetail territory={activeTerritory} showRawScore={!draft} />
+            <TerritoryDetail territory={activeTerritory} showRawScore={false} />
           </section>
         )}
         {report.territories.length > 0 && (
@@ -737,9 +716,18 @@ function Report({ report }: { report: CreatorCompassReport }) {
         <section className="readiness">
           <div className="readiness-summary">
             <span className="section-number">02 — SPONSORSHIP READINESS</span>
-            <h2>
-              {report.readinessSummary.score ?? "—"}
-              {report.readinessSummary.score != null && <small>/100</small>}
+            <h2
+              className="readiness-score"
+              aria-label={
+                report.readinessSummary.score == null
+                  ? "Readiness score unavailable"
+                  : `${report.readinessSummary.score} out of 100`
+              }
+            >
+              <span className="readiness-score-value">{report.readinessSummary.score ?? "—"}</span>
+              {report.readinessSummary.score != null && (
+                <span className="readiness-score-total">/100</span>
+              )}
             </h2>
             <b>{report.readinessSummary.status.replace("-", " ")}</b>
             <p>{report.readinessSummary.summary}</p>
@@ -795,8 +783,15 @@ function Report({ report }: { report: CreatorCompassReport }) {
               model inference, assumptions, and unknowns stay visibly distinct.
             </p>
             <p className="model-note">
-              Final review: <b>{report.aiReview.usedGpt56 ? "GPT-5.6" : report.aiReview.model}</b> ·
-              Methodology {report.methodologyVersion}
+              Strategy review:{" "}
+              <b>
+                {report.aiReview.usedGpt56
+                  ? "GPT-5.6"
+                  : report.aiReview.model === "deterministic"
+                    ? "deterministic fallback"
+                    : report.aiReview.model}
+              </b>{" "}
+              · Methodology {report.methodologyVersion}
             </p>
           </div>
           <details className="evidence-drawer">
