@@ -1068,10 +1068,11 @@ async function runAnalysis(env: Env, analysisId: string) {
     );
     let profile = deterministic;
     const providers = primaryProviders(env);
+    // Native Workers AI binding calls cannot be aborted once stalled. Pasted context is already
+    // server-grounded, so use the cancellable HTTP provider on this continuation path while
+    // preserving Cloudflare-first routing for website analyses.
     const groundedContextProviders = input.userProvidedText
-      ? [...providers].sort(
-          (left, right) => Number(left.name === "cloudflare") - Number(right.name === "cloudflare"),
-        )
+      ? providers.filter((provider) => provider.name !== "cloudflare")
       : providers;
     let brandExtractionPath = "deterministic-fallback";
     if (groundedContextProviders.length) {
