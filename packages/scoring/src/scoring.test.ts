@@ -204,6 +204,23 @@ describe("territory fit scoring", () => {
       "seo-and-search-marketing",
     );
   });
+
+  it("does not infer open-source positioning from generic software evidence", () => {
+    const genericSaas = profile(
+      "Workflow SaaS",
+      "A B2B software product for developers and product teams to manage projects and issues.",
+      {
+        productType: "software",
+        audienceType: "b2b",
+        buyerRoles: ["developer", "product leader"],
+        useCases: ["software evaluation", "project management"],
+        jobsToBeDone: ["manage software projects"],
+      },
+    );
+    expect(selectPortfolio(genericSaas).map((item) => item.territoryId)).not.toContain(
+      "open-source-and-self-hosting",
+    );
+  });
   it("ranks OpenSEO by buyer and use-case fit instead of general readiness", () => {
     const ranked = rankTerritories(openSeo);
     const top = ranked.slice(0, 10).map((item) => item.territory.id);

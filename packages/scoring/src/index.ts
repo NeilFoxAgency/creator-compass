@@ -237,7 +237,16 @@ function scoreTerritoryDetailed(
     /\b(SEO|search marketing|search engine optimization|keywords?|search rankings?|SERPs?|backlinks?|site audits?|technical SEO)\b/i.test(
       evidenceText(profile),
     );
-  const eligible = directMatch >= 46 && incompatibilityPenalty === 0 && seoEvidencePresent;
+  const openSourceEvidencePresent =
+    territory.id !== "open-source-and-self-hosting" ||
+    /\b(open source|open-source|self.host(?:ed|ing)?|source code|GitHub)\b/i.test(
+      evidenceText(profile),
+    );
+  const eligible =
+    directMatch >= 46 &&
+    incompatibilityPenalty === 0 &&
+    seoEvidencePresent &&
+    openSourceEvidencePresent;
   const contentFormatNaturalness = !eligible
     ? 0
     : profile.demonstrability === "strong"
@@ -290,6 +299,7 @@ function scoreTerritoryDetailed(
     broadConsumerTechMismatch ? "broad attention audience without evidenced buyer intent" : "",
     productMismatch ? "product-type mismatch" : "",
     !seoEvidencePresent ? "no direct SEO evidence" : "",
+    !openSourceEvidencePresent ? "no direct open-source or self-hosting evidence" : "",
   ].filter(Boolean);
   return {
     territory,

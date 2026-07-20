@@ -767,6 +767,14 @@ export function validateDeliverableReport(value: unknown) {
       )
     )
       reasons.push("seo-and-search-marketing:unsupported by direct evidence");
+    if (
+      territory.territoryId === "open-source-and-self-hosting" &&
+      territory.classification !== "risk" &&
+      !/\b(open source|open-source|self.host(?:ed|ing)?|source code|GitHub)\b/i.test(
+        affirmativeEvidence,
+      )
+    )
+      reasons.push("open-source-and-self-hosting:unsupported by direct evidence");
     if (territory.evidenceIds.some((id) => !evidenceIds.has(id)))
       reasons.push(`${territory.territoryId}:unknown evidence`);
     try {
