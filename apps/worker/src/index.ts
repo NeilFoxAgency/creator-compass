@@ -594,7 +594,8 @@ export function normalizeReviewWhy(why: string) {
     .replace(/(?:raw\s+)?fit score\s*(?:of\s+)?\d+/gi, "strong fit")
     .replace(/\bstrong fit\s*(?:above|over|at least|of)?\s*\d+\b/gi, "strong fit")
     .replace(/\bstrong fit\s+(?:with|and)\s+strong fit\b/gi, "strong fit")
-    .replace(/\(\s*(?:(?:user|web)\s+\d+(?:\s+\d+)?\s*,?\s*)+\)/gi, "in the supplied evidence");
+    .replace(/\(\s*(?:(?:user|web)\s+\d+(?:\s+\d+)?\s*,?\s*)+\)/gi, "")
+    .replace(/\s+([.,;:])/g, "$1");
 }
 
 function normalizeVisibleReport(value: unknown) {

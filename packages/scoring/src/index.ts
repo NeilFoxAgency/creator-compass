@@ -474,6 +474,7 @@ function recommendation(
     ...territory.categorySignals,
   ]);
   const risk = classification === "risk";
+  const territoryArticle = /^[aeiou]/i.test(territory.name) ? "An" : "A";
   return {
     territoryId: territory.id,
     name: territory.name,
@@ -494,7 +495,7 @@ function recommendation(
       : `This audience includes people who need to ${goal}, giving ${product} a specific role through ${useCase}.`,
     customerNeed: goal,
     contentStyles: territory.commonContentFormats.slice(0, 3),
-    creatorProfile: `A ${territory.name.toLowerCase()} practitioner who can demonstrate ${useCase}, explain tradeoffs, and speak to ${territory.buyerRoles.slice(0, 2).join(" or ")}.`,
+    creatorProfile: `${territoryArticle} ${territory.name.toLowerCase()} practitioner who can demonstrate ${useCase}, explain tradeoffs, and speak to ${territory.buyerRoles.slice(0, 2).join(" or ")}.`,
     creatorSizeBand: territoryFitScore >= 80 ? "micro" : territoryFitScore >= 60 ? "small" : "nano",
     sponsorshipFormats: [format, "integrated demonstration"],
     campaignConcepts: [

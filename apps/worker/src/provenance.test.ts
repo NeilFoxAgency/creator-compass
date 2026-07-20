@@ -481,7 +481,7 @@ describe("server-owned evidence provenance", () => {
       normalizeReviewWhy(
         "This route has territoryFitScore above 70 and is supported by the sources (user 1, user 2).",
       ),
-    ).toBe("This route has strong fit and is supported by the sources in the supplied evidence.");
+    ).toBe("This route has strong fit and is supported by the sources.");
   });
 
   it("normalizes persisted North Star prose at delivery time", () => {
