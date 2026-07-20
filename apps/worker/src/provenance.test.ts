@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { BrandProfile } from "@creator-compass/contracts";
-import { buildCandidateSet } from "@creator-compass/scoring";
+import { assembleDeterministicReport, buildCandidateSet } from "@creator-compass/scoring";
 import {
   applyCandidateEnrichment,
   applyExtractedProfile,
+  assertReviewQuality,
   normalizeReviewFormat,
   prepareEvidenceForModel,
 } from "./index";
@@ -257,5 +258,22 @@ describe("server-owned evidence provenance", () => {
     ).toBe(candidate.sponsorshipFormats[0]);
     expect(normalizeReviewFormat("case-study teardown", candidate)).toBe("case-study teardown");
     expect(normalizeReviewFormat("JSON", candidate)).toBe(candidate.sponsorshipFormats[0]);
+  });
+
+  it("rejects final-review meta-instructions and fake test plans", () => {
+    const report = assembleDeterministicReport(profile);
+    expect(() =>
+      assertReviewQuality(report, {
+        portfolio: [{ territoryId: report.territories[0]!.territoryId, classification: "core" }],
+        northStarTerritoryId: report.territories[0]!.territoryId,
+        format: "site audit",
+        creatorDirection:
+          "select only defensible territories, no quotas filled, no invented evidence",
+        testShape: "valid",
+        why: "The supplied candidates satisfy the required schema and do not exceed quotas.",
+        fixFirst: [report.readiness[0]!.key],
+        assumptions: [],
+      }),
+    ).toThrow(/meta-instructions|undeveloped test plan/);
   });
 });

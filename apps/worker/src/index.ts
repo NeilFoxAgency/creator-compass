@@ -467,6 +467,7 @@ function applyReview(
 ) {
   if (!validPortfolio(review, candidates))
     throw new Error("The strategic review returned an invalid portfolio.");
+  assertReviewQuality(report, review);
   const candidateMap = new Map(candidates.map((candidate) => [candidate.territoryId, candidate]));
   const northCandidate = candidateMap.get(review.northStarTerritoryId)!;
   report.territories = review.portfolio.map((item) => ({
@@ -498,6 +499,22 @@ function applyReview(
           ? "verified-fallback"
           : "cloudflare-fallback",
   };
+}
+
+export function assertReviewQuality(report: CreatorCompassReport, review: FinalReview) {
+  const metaInstructionPattern =
+    /(?:select only defensible|no quotas? (?:filled|exceeded)|supplied (?:eligible )?candidates?|invented evidence|exceeding quotas?|territoryFitScore\s*[≥>=])/i;
+  if (
+    review.creatorDirection.trim().length < 40 ||
+    metaInstructionPattern.test(review.creatorDirection) ||
+    /^(?:valid|test|unknown|none|not applicable)$/i.test(review.testShape.trim()) ||
+    review.testShape.trim().length < 40 ||
+    metaInstructionPattern.test(review.why)
+  )
+    throw new Error("The strategic review returned meta-instructions or an undeveloped test plan.");
+  const readinessKeys = new Set(report.readiness.map((dimension) => dimension.key));
+  if (review.fixFirst.some((key) => !readinessKeys.has(key)))
+    throw new Error("The strategic review returned an unknown readiness priority.");
 }
 
 const reviewSystem = `You are CreatorCompass's final strategic adjudicator. Select only defensible territories from the supplied eligible candidates: 1-3 core, 0-3 adjacent, 0-2 experimental, and 0-2 risk. Never fill a quota. Core must have territoryFitScore >= 70, adjacent >= 50, and experimental >= 38 with an explicit evidence-backed bridge. Risk entries must already be marked risk candidates and explain why a tempting surface connection has weak purchase or influence intent. Choose one selected core territory as the North Star. Use only supplied evidence IDs and structured facts. Do not invent statistics, costs, ROI, acceptance, safety, or legal conclusions. Prefer a smaller coherent portfolio over weak variety, but retain defensible adjacent territories when their campaign concepts add a distinct documented use case or buyer role and help cover the supplied campaignCoverageGoals.`;
