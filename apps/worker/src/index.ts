@@ -19,6 +19,7 @@ import {
   CloudflareProvider,
   MistralProvider,
   OpenAIProvider,
+  OpenAIRequestError,
   generateWithFallback,
   type ModelResult,
   type StructuredModelProvider,
@@ -139,6 +140,22 @@ const mistralSmokeSchema = z.object({
   audience: z.string().min(8),
   evidenceIds: z.array(z.literal("test-1")).length(1),
 });
+
+function safeOpenAIFailure(error: unknown) {
+  if (error instanceof OpenAIRequestError) return error.details;
+  return {
+    provider: "openai" as const,
+    status: null,
+    requestId: null,
+    errorType:
+      error instanceof z.ZodError ? "schema_validation_error" : "strategic_postflight_error",
+    errorCode: null,
+    message: (error instanceof Error ? error.message : "Unknown OpenAI failure")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 300),
+  };
+}
 
 const injectionPattern =
   /(?:ignore|disregard|override)\s+(?:all\s+)?(?:previous|prior|system|developer)\s+(?:instructions?|messages?|prompts?)|\b(?:system|developer|assistant)\s*(?:message|prompt)\s*:/i;
@@ -1209,11 +1226,12 @@ async function runAnalysis(env: Env, analysisId: string) {
       } catch (error) {
         reviewResult = undefined;
         await recordUsage(env, null, "openai", "final-review", true);
+        const failure = safeOpenAIFailure(error);
         console.warn(
           JSON.stringify({
             event: "openai_review_failed",
             analysisId,
-            reason: error instanceof Error ? error.message : "unknown",
+            ...failure,
           }),
         );
       }
@@ -1653,6 +1671,111 @@ app.post("/api/admin/provider-test/mistral", async (c) => {
       }),
     );
     return jsonError("Mistral provider test failed.", "PROVIDER_TEST_FAILED", 503);
+  }
+});
+
+app.post("/api/admin/provider-test/openai-final-review", async (c) => {
+  if (
+    !(await secureEqual(
+      c.req.header("authorization"),
+      c.env.ADMIN_BYPASS_SECRET ? `Bearer ${c.env.ADMIN_BYPASS_SECRET}` : undefined,
+    ))
+  )
+    return jsonError("Not authorized.", "UNAUTHORIZED", 401);
+  if (!c.env.OPENAI_API_KEY)
+    return jsonError("OpenAI is not configured.", "PROVIDER_UNAVAILABLE", 503);
+  const evidence: BrandProfile["evidence"] = [
+    {
+      id: "smoke-1",
+      sourceUrl: "https://creatorcompass.neilfoxagency.com/methodology",
+      excerpt:
+        "SearchKit is SEO software for keyword research and site audits used by SEO professionals.",
+      kind: "website",
+    },
+    {
+      id: "smoke-2",
+      sourceUrl: "https://creatorcompass.neilfoxagency.com/methodology",
+      excerpt: "A creator can demonstrate keyword research with a documented input and output.",
+      kind: "website",
+    },
+  ];
+  const smokeProfile = brandProfileSchema.parse({
+    canonicalDomain: "searchkit.example",
+    brandName: "SearchKit",
+    summary: evidence[0]!.excerpt,
+    products: [{ name: "SearchKit", category: "SEO software" }],
+    targetCustomers: ["SEO professionals"],
+    customerNeeds: ["research keyword opportunities"],
+    businessModel: "saas",
+    productType: "software",
+    audienceType: "b2b",
+    buyerRoles: ["SEO professional"],
+    userRoles: ["SEO specialist"],
+    industries: ["marketing"],
+    useCases: ["keyword research"],
+    jobsToBeDone: ["research keyword opportunities"],
+    buyerGoalVerbPhrases: ["research keyword opportunities"],
+    problemStatements: [],
+    technicalLevel: "technical",
+    purchaseMotion: "product-led",
+    campaignAssetType: "software-access",
+    differentiators: ["keyword research"],
+    pricePositioning: "unknown",
+    purchaseFriction: "unknown",
+    demonstrability: "strong",
+    trustRequirement: "medium",
+    repeatPurchasePotential: "unknown",
+    riskTags: [],
+    unknowns: ["campaign attribution"],
+    evidence,
+  });
+  const smokeReport = assembleDeterministicReport(smokeProfile);
+  const smokeCandidate = smokeReport.territories.find(
+    (territory) => territory.territoryId === "seo-and-search-marketing",
+  );
+  if (!smokeCandidate)
+    return jsonError("OpenAI smoke fixture is invalid.", "PROVIDER_TEST_FIXTURE_FAILED", 500);
+  try {
+    const result = await new OpenAIProvider(c.env.OPENAI_API_KEY, c.env.OPENAI_MODEL).generate({
+      task: "final-review",
+      schema: finalReviewSchema,
+      input: {
+        brandProfile: smokeProfile,
+        readiness: smokeReport.readiness,
+        candidates: [smokeCandidate],
+        contradictionsAndUnknowns: smokeProfile.unknowns,
+        campaignCoverageGoals: ["keyword research"],
+        deterministicScores: {
+          [smokeCandidate.territoryId]: smokeCandidate.territoryFitScore ?? smokeCandidate.score,
+        },
+      },
+      system: `${reviewSystem} This smoke packet contains one eligible Core candidate. Select it as Core and North Star.`,
+      maxOutputTokens: 1000,
+      temperature: 0,
+      promptVersion: "review-v2-smoke",
+    });
+    const reviewed = structuredClone(smokeReport);
+    applyReview(reviewed, result.data, [smokeCandidate], result);
+    const validation = validateDeliverableReport(finalizeReportDelivery(reviewed, 1, true));
+    if (!validation.valid)
+      throw new Error(`Delivery validation failed: ${validation.reasons.join("; ")}`);
+    await recordUsage(c.env, result, "openai", "provider-smoke-test");
+    return c.json({
+      ok: true,
+      provider: result.provider,
+      model: result.model,
+      requestId: result.responseId ?? null,
+      latencyMs: result.latencyMs,
+      usage: { inputUnits: result.inputUnits, outputUnits: result.outputUnits },
+      schemaValid: result.schemaValid,
+      strategicPostflightValid: true,
+      deliveryValidationPassed: true,
+    });
+  } catch (error) {
+    const failure = safeOpenAIFailure(error);
+    await recordUsage(c.env, null, "openai", "provider-smoke-test", true);
+    console.error(JSON.stringify({ event: "openai_provider_smoke_test_failed", ...failure }));
+    return c.json({ ok: false, failure }, 503);
   }
 });
 

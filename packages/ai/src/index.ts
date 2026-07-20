@@ -31,6 +31,27 @@ export interface StructuredModelProvider {
   generate<T>(request: StructuredGenerationRequest<T>): Promise<ModelResult<T>>;
 }
 
+export type SafeProviderFailure = {
+  provider: "openai";
+  status: number | null;
+  requestId: string | null;
+  errorType: string;
+  errorCode: string | null;
+  message: string;
+};
+
+export class OpenAIRequestError extends Error {
+  readonly details: SafeProviderFailure;
+
+  constructor(details: SafeProviderFailure) {
+    super(
+      `OpenAI request failed${details.status ? ` with ${details.status}` : ""}${details.requestId ? ` (${details.requestId})` : ""}: ${details.errorType}: ${details.message}`,
+    );
+    this.name = "OpenAIRequestError";
+    this.details = details;
+  }
+}
+
 export type ProviderAttempt<T> = {
   provider: StructuredModelProvider["name"];
   succeeded: boolean;
@@ -198,12 +219,23 @@ export class OpenAIProvider implements StructuredModelProvider {
     });
     if (!response.ok) {
       const requestId = response.headers.get("x-request-id");
-      throw new Error(
-        `OpenAI request failed with ${response.status}${requestId ? ` (${requestId})` : ""}.`,
-      );
+      const raw = (await response.json().catch(() => null)) as {
+        error?: { type?: string; code?: string | null; message?: string };
+      } | null;
+      throw new OpenAIRequestError({
+        provider: "openai",
+        status: response.status,
+        requestId,
+        errorType: raw?.error?.type?.slice(0, 80) || "http_error",
+        errorCode: raw?.error?.code?.slice(0, 80) || null,
+        message:
+          raw?.error?.message?.replace(/\s+/g, " ").trim().slice(0, 300) || "Request rejected.",
+      });
     }
     const body = (await response.json()) as {
       id?: string;
+      status?: string;
+      incomplete_details?: { reason?: string };
       output_text?: string;
       output?: Array<{ content?: Array<{ text?: string }> }>;
       usage?: { input_tokens?: number; output_tokens?: number };
@@ -214,8 +246,42 @@ export class OpenAIProvider implements StructuredModelProvider {
         ?.flatMap((item) => item.content ?? [])
         .map((item) => item.text ?? "")
         .join("");
+    if (!outputText?.trim())
+      throw new OpenAIRequestError({
+        provider: "openai",
+        status: 200,
+        requestId: response.headers.get("x-request-id"),
+        errorType: body.status === "incomplete" ? "incomplete_response" : "response_parse_error",
+        errorCode: body.incomplete_details?.reason ?? null,
+        message:
+          body.status === "incomplete"
+            ? `Response was incomplete: ${body.incomplete_details?.reason ?? "unknown reason"}.`
+            : "Response did not contain structured output text.",
+      });
+    let data: T;
+    try {
+      data = parseCandidate(request.schema, outputText);
+    } catch (error) {
+      const message =
+        error instanceof z.ZodError
+          ? error.issues
+              .slice(0, 6)
+              .map((issue) => `${issue.path.join(".") || "root"}: ${issue.message}`)
+              .join("; ")
+          : error instanceof Error
+            ? error.message
+            : "Unknown structured-output parse error.";
+      throw new OpenAIRequestError({
+        provider: "openai",
+        status: 200,
+        requestId: response.headers.get("x-request-id"),
+        errorType: error instanceof z.ZodError ? "schema_validation_error" : "response_parse_error",
+        errorCode: null,
+        message: message.replace(/\s+/g, " ").trim().slice(0, 300),
+      });
+    }
     return {
-      data: parseCandidate(request.schema, outputText),
+      data,
       provider: this.name,
       model: this.model,
       latencyMs: Date.now() - started,

@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   CloudflareProvider,
   MistralProvider,
+  OpenAIProvider,
   generateWithFallback,
   type StructuredModelProvider,
 } from "./index";
@@ -220,6 +221,90 @@ describe("Mistral structured responses", () => {
       inputUnits: 72,
       outputUnits: 21,
       data: { brandName: "Compass Test", evidenceIds: ["test-1"] },
+    });
+  });
+});
+
+describe("OpenAI Responses structured output", () => {
+  const schema = z.object({ ok: z.boolean(), evidenceIds: z.array(z.string()) });
+
+  it("uses the Responses API structured-output shape and parses output content", async () => {
+    let requestBody: Record<string, unknown> | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return new Response(
+          JSON.stringify({
+            id: "resp_test",
+            output: [
+              { content: [{ type: "output_text", text: '{"ok":true,"evidenceIds":["e1"]}' }] },
+            ],
+            usage: { input_tokens: 44, output_tokens: 12 },
+          }),
+          { status: 200, headers: { "x-request-id": "req_test" } },
+        );
+      }),
+    );
+    const result = await new OpenAIProvider("test-key", "gpt-5.6-luna").generate({
+      task: "final-review",
+      schema,
+      input: { candidate: "small" },
+      system: "Return the valid packet.",
+      maxOutputTokens: 200,
+      temperature: 0,
+      promptVersion: "review-smoke-v1",
+    });
+    expect(requestBody).toMatchObject({
+      model: "gpt-5.6-luna",
+      text: {
+        format: {
+          type: "json_schema",
+          name: "final_review",
+          strict: true,
+          schema: { type: "object", additionalProperties: false },
+        },
+      },
+    });
+    expect(result.data).toEqual({ ok: true, evidenceIds: ["e1"] });
+  });
+
+  it("surfaces sanitized OpenAI status, request ID, type, code, and message", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              error: {
+                type: "insufficient_quota",
+                code: "insufficient_quota",
+                message: "You exceeded your current quota.",
+              },
+            }),
+            { status: 429, headers: { "x-request-id": "req_quota" } },
+          ),
+      ),
+    );
+    await expect(
+      new OpenAIProvider("test-key").generate({
+        task: "final-review",
+        schema,
+        input: {},
+        system: "Test",
+        maxOutputTokens: 100,
+        temperature: 0,
+        promptVersion: "review-smoke-v1",
+      }),
+    ).rejects.toMatchObject({
+      details: {
+        provider: "openai",
+        status: 429,
+        requestId: "req_quota",
+        errorType: "insufficient_quota",
+        errorCode: "insufficient_quota",
+        message: "You exceeded your current quota.",
+      },
     });
   });
 });
