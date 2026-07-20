@@ -1860,12 +1860,17 @@ footer a {
   .agency-cta {
     break-before: auto;
     page-break-before: auto;
-    padding-top: 42px;
-    padding-bottom: 42px;
+    padding-top: 24px;
+    padding-bottom: 24px;
   }
   .agency-cta h2 {
-    margin: 14px 0;
-    font-size: 38px;
+    margin: 9px 0;
+    font-size: 32px;
+  }
+  .agency-cta > div > p {
+    margin: 8px 0 0;
+    font-size: 13px;
+    line-height: 1.45;
   }
   .draft-banner {
     display: block;
