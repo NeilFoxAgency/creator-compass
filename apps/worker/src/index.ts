@@ -968,7 +968,9 @@ export function normalizeReviewReadinessKeys(
 
 function factSegments(values: string[]) {
   return values
-    .flatMap((value) => value.split(/\s*(?:,|\bwith\b|\band\b|\bor\b)\s*/i))
+    .flatMap((value) =>
+      value.replace(/\([^)]*\)/g, "").split(/\s*(?:,|\bwith\b|\band\b|\bor\b)\s*/i),
+    )
     .map((value) => value.trim())
     .filter((value) => value.length >= 4);
 }

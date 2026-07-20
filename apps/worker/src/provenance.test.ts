@@ -535,4 +535,46 @@ describe("server-owned evidence provenance", () => {
       }),
     ).toThrow(/omitted documented campaign coverage/);
   });
+
+  it("does not require parenthetical vendor examples in campaign copy", () => {
+    const report = assembleDeterministicReport(profile);
+    const candidate = {
+      ...report.territories[0]!,
+      campaignConcepts: [
+        {
+          title: "Multiple-model workflow",
+          concept:
+            "Demonstrate the integration of multiple AI models in one grounded creative workflow.",
+          openingHook: "Here is how the multi-model workflow supports a real production task.",
+        },
+      ],
+    };
+    expect(() =>
+      assertReviewQuality(
+        {
+          ...report,
+          brandProfile: {
+            ...report.brandProfile,
+            differentiators: [
+              "integration of multiple AI models (Sora, Veo, Kling, Seedance, GPT Image)",
+            ],
+            useCases: [],
+          },
+        },
+        {
+          portfolio: [{ territoryId: candidate.territoryId, classification: "core" }],
+          northStarTerritoryId: candidate.territoryId,
+          format: "integrated demonstration",
+          creatorDirection:
+            "Use a practitioner who can demonstrate the documented workflow and explain its limits.",
+          testShape:
+            "Run one bounded creator demonstration with a defined audience and conversion event.",
+          why: "The selected route has the strongest buyer and use-case overlap in the evidence.",
+          fixFirst: [report.readiness[0]!.key],
+          assumptions: [],
+        },
+        [candidate],
+      ),
+    ).not.toThrow();
+  });
 });
