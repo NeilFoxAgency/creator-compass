@@ -81,15 +81,32 @@ export function validatePublicUrl(raw: string): URL {
   return url;
 }
 
-async function readBoundedBody(response: Response) {
+export async function readBoundedBody(response: Response, timeoutMs = 8_000) {
   const length = Number(response.headers.get("content-length") ?? 0);
   if (length > MAX_BODY_BYTES) throw new Error("The page is too large to analyze safely.");
   const reader = response.body?.getReader();
   if (!reader) return "";
   const chunks: Uint8Array[] = [];
   let total = 0;
+  const deadline = Date.now() + timeoutMs;
   while (true) {
-    const { done, value } = await reader.read();
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      await reader.cancel().catch(() => undefined);
+      throw new Error("The website response body timed out.");
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const { done, value } = await Promise.race([
+      reader.read(),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error("The website response body timed out.")),
+          remaining,
+        );
+      }),
+    ]).finally(() => {
+      if (timer) clearTimeout(timer);
+    });
     if (done) break;
     total += value.byteLength;
     if (total > MAX_BODY_BYTES) {

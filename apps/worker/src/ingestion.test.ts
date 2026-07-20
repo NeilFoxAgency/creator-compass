@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractPage, ingestUserText, validatePublicUrl } from "./ingestion";
+import { extractPage, ingestUserText, readBoundedBody, validatePublicUrl } from "./ingestion";
 
 describe("safe URL validation", () => {
   it.each([
@@ -19,6 +19,11 @@ describe("safe URL validation", () => {
 });
 
 describe("HTML extraction", () => {
+  it("bounds a website body that never finishes streaming", async () => {
+    const response = new Response(new ReadableStream({ pull() {} }));
+    await expect(readBoundedBody(response, 10)).rejects.toThrow(/timed out/i);
+  });
+
   it("extracts useful text without scripts, navigation, or cookie text", () => {
     const page = extractPage(
       `<html><head><title>Acme Tools</title><meta name="description" content="Tools for careful makers"></head><body><nav>Cookie settings</nav><h1>Build with confidence</h1><p>Our precision tools help home craftspeople complete safer projects.</p><script>alert(1)</script></body></html>`,
