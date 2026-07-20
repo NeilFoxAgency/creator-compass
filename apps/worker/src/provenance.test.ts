@@ -73,6 +73,18 @@ describe("server-owned evidence provenance", () => {
     expect(result.products).toEqual(profile.products);
   });
 
+  it("repairs noun fragments in action fields before they can enter prose", () => {
+    const result = applyExtractedProfile(profile, "canonical.example", {
+      ...extracted,
+      customerNeeds: ["SEO platform"],
+      jobsToBeDone: ["marketing software"],
+      buyerGoalVerbPhrases: ["technology"],
+    });
+    expect(result.customerNeeds).toEqual(["evaluate SEO platform"]);
+    expect(result.jobsToBeDone).toEqual(["evaluate marketing software"]);
+    expect(result.buyerGoalVerbPhrases).toEqual(["evaluate technology"]);
+  });
+
   it("rejects fabricated extraction evidence IDs", () => {
     expect(() =>
       applyExtractedProfile(profile, "canonical.example", {
@@ -116,6 +128,8 @@ describe("server-owned evidence provenance", () => {
       profile.evidence,
     );
     expect(enriched[0]?.score).toBe(first.score);
+    expect(enriched[0]?.territoryFitScore).toBe(first.territoryFitScore);
+    expect(enriched[0]?.scoreComponents).toEqual(first.scoreComponents);
     expect(enriched[0]?.audienceConnection).toBe("Specific connection");
     expect(() =>
       applyCandidateEnrichment(
