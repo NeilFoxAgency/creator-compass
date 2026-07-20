@@ -561,7 +561,7 @@ function Report({ report }: { report: CreatorCompassReport }) {
   async function share() {
     setShareStatus("");
     try {
-      if (navigator.share) {
+      if (navigator.share && navigator.maxTouchPoints > 0) {
         await navigator.share({
           title: `${report.brandProfile.brandName} Creator Compass`,
           text: `Creator audience directions for ${report.brandProfile.brandName}`,
