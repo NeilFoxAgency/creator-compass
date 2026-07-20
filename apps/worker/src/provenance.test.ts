@@ -216,6 +216,43 @@ describe("server-owned evidence provenance", () => {
     ).toThrow(/placeholders|unsupported/);
   });
 
+  it("rejects unsupported product mechanics even without a numeric claim", () => {
+    const candidates = buildCandidateSet(profile, 8);
+    const first = candidates[0]!;
+    expect(() =>
+      applyCandidateEnrichment(
+        candidates,
+        {
+          candidates: [
+            {
+              territoryId: first.territoryId,
+              audienceConnection: "A grounded audience connection",
+              creatorProfile: "A practical educator",
+              campaignConcepts: [
+                {
+                  title: "Daily alerts",
+                  concept:
+                    "Show viewers how the product automatically sends daily alerts about priorities.",
+                  openingHook: "Never miss a priority change",
+                },
+                {
+                  title: "Comparison",
+                  concept:
+                    "Compare the documented workflow with the audience's current manual process.",
+                  openingHook: "What changes?",
+                },
+              ],
+              viewerObjection: "Viewers may question fit",
+              keyRisk: "The connection could feel forced",
+              evidenceIds: ["web-1-1"],
+            },
+          ],
+        },
+        profile.evidence,
+      ),
+    ).toThrow(/unsupported product capability/);
+  });
+
   it("rejects a campaign title repeated as an undeveloped concept", () => {
     const candidates = buildCandidateSet(profile, 12);
     const first = candidates[0]!;

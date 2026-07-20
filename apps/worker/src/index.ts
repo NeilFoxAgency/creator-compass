@@ -196,6 +196,25 @@ function assertGroundedEnrichment(
     if (modelText.toLowerCase().includes(claim) && !citedText.toLowerCase().includes(claim))
       throw new Error(`Model returned an unsupported claim: ${claim}`);
   }
+  const unsupportedCapabilityPatterns = [
+    /\bdaily\b/i,
+    /\balerts?\b/i,
+    /\bimports?\b/i,
+    /\bexports?\b/i,
+    /\bfree tier\b/i,
+    /\bunder (?:one|two|three|four|five|six|seven|eight|nine|ten|\d+) minutes?\b/i,
+    /\bwithout (?:sending|sharing) (?:your )?data\b/i,
+    /\bautomatically\b/i,
+    /\bcontinuous(?:ly)? monitor(?:ing)?\b/i,
+    /\breduc(?:e|es|ing) (?:manual effort|client costs?)\b/i,
+    /\b(?:high[- ]conversion|high[- ]authority)\b/i,
+    /\binstantly\b/i,
+  ];
+  for (const pattern of unsupportedCapabilityPatterns) {
+    const match = modelText.match(pattern)?.[0];
+    if (match && !citedText.toLowerCase().includes(match.toLowerCase()))
+      throw new Error(`Model returned an unsupported product capability: ${match}`);
+  }
 }
 
 export function applyExtractedProfile(
@@ -596,7 +615,7 @@ async function runAnalysis(env: Env, analysisId: string) {
         generate: (request) =>
           mistralRepair.generate({
             ...request,
-            system: `REPAIR MODE: A previous candidate response failed grounding or completeness validation. Return every supplied candidate exactly once. Use no digits or numerical claims anywhere. Use the two supplied documentedUseCaseFocus values for two distinct, complete tactical concepts. Do not repeat a title as a concept. ${request.system}`,
+            system: `REPAIR MODE: A previous candidate response failed grounding or completeness validation. Return every supplied candidate exactly once. Use no digits or numerical claims anywhere. Use the two supplied documentedUseCaseFocus values for two distinct, complete tactical concepts. Describe what a creator can demonstrate without inventing interface actions, automation behavior, setup speed, savings, alerts, imports, exports, or other product capabilities not stated verbatim in the cited evidence. Do not repeat a title as a concept. ${request.system}`,
             temperature: 0,
             promptVersion: "candidate-v2-repair",
           }),
