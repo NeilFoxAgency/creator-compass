@@ -569,9 +569,16 @@ function Report({ report }: { report: CreatorCompassReport }) {
         setShareStatus("Share sheet opened.");
         return;
       }
-      if (navigator.clipboard && window.isSecureContext)
-        await navigator.clipboard.writeText(location.href);
-      else {
+      let copied = false;
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(location.href);
+          copied = true;
+        } catch {
+          /* Some desktop browsers expose Clipboard API but deny writes; use the safe fallback. */
+        }
+      }
+      if (!copied) {
         const input = document.createElement("input");
         input.value = location.href;
         input.setAttribute("readonly", "");
