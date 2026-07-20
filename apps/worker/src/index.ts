@@ -588,11 +588,13 @@ export function normalizeReviewFormat(format: string, northCandidate: TerritoryR
 export function normalizeReviewWhy(why: string) {
   return why
     .replace(
-      /(?:high\s+|low\s+)?territoryFitScore\s*(?:\(\s*\d+\s*\)|[:=]?\s*\d+)?/gi,
+      /(?:high\s+|low\s+)?territoryFitScore\s*(?:(?:above|over|at least|of|[:=])?\s*\d+|\(\s*\d+\s*\))?/gi,
       "strong fit",
     )
     .replace(/(?:raw\s+)?fit score\s*(?:of\s+)?\d+/gi, "strong fit")
-    .replace(/\bstrong fit\s+(?:with|and)\s+strong fit\b/gi, "strong fit");
+    .replace(/\bstrong fit\s*(?:above|over|at least|of)?\s*\d+\b/gi, "strong fit")
+    .replace(/\bstrong fit\s+(?:with|and)\s+strong fit\b/gi, "strong fit")
+    .replace(/\(\s*(?:(?:user|web)\s+\d+(?:\s+\d+)?\s*,?\s*)+\)/gi, "in the supplied evidence");
 }
 
 function normalizeVisibleReport(value: unknown) {
