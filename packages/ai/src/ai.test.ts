@@ -173,6 +173,25 @@ describe("Cloudflare structured responses", () => {
     });
     expect(result.data.brandName).toBe("Choice fallback");
   });
+
+  it("bounds a stalled Workers AI call so fallback can continue", async () => {
+    const provider = new CloudflareProvider(
+      { run: () => new Promise(() => undefined) },
+      "@cf/qwen/qwen3-30b-a3b-fp8",
+      5,
+    );
+    await expect(
+      provider.generate({
+        task: "brand-extraction",
+        schema,
+        input: {},
+        system: "Extract",
+        maxOutputTokens: 200,
+        temperature: 0,
+        promptVersion: "brand-v2",
+      }),
+    ).rejects.toThrow("Cloudflare Workers AI request timed out after 5ms");
+  });
 });
 
 describe("Mistral structured responses", () => {

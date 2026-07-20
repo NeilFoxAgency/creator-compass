@@ -92,28 +92,50 @@ function usageFrom(value: unknown) {
   };
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${label} timed out after ${timeoutMs}ms.`)),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export class CloudflareProvider implements StructuredModelProvider {
   readonly name = "cloudflare" as const;
   constructor(
     private readonly ai: AiBinding,
     private readonly model = "@cf/qwen/qwen3-30b-a3b-fp8",
+    private readonly timeoutMs = 20_000,
   ) {}
 
   async generate<T>(request: StructuredGenerationRequest<T>): Promise<ModelResult<T>> {
     const started = Date.now();
     const jsonSchema = z.toJSONSchema(request.schema, { target: "draft-7" });
-    const response = await this.ai.run(this.model, {
-      messages: [
-        {
-          role: "system",
-          content: `${request.system}\nReturn only JSON matching the supplied contract. Never invent evidence.`,
-        },
-        { role: "user", content: JSON.stringify(request.input) },
-      ],
-      max_tokens: request.maxOutputTokens,
-      temperature: request.temperature,
-      response_format: { type: "json_schema", json_schema: jsonSchema },
-    });
+    const response = await withTimeout(
+      this.ai.run(this.model, {
+        messages: [
+          {
+            role: "system",
+            content: `${request.system}\nReturn only JSON matching the supplied contract. Never invent evidence.`,
+          },
+          { role: "user", content: JSON.stringify(request.input) },
+        ],
+        max_tokens: request.maxOutputTokens,
+        temperature: request.temperature,
+        response_format: { type: "json_schema", json_schema: jsonSchema },
+      }),
+      this.timeoutMs,
+      "Cloudflare Workers AI request",
+    );
     const usage = usageFrom(response);
     return {
       data: parseCandidate(request.schema, response),
