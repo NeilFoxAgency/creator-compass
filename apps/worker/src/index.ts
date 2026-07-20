@@ -868,7 +868,10 @@ function applyReview(
   candidates: TerritoryRecommendation[],
   result: ModelResult<FinalReview>,
 ) {
-  const normalizedReview = normalizeReviewReadinessKeys(report, review);
+  const normalizedReview = normalizeReviewReadinessKeys(
+    report,
+    normalizeReviewProse(report, review, candidates),
+  );
   if (!validPortfolio(normalizedReview, candidates))
     throw new Error("The strategic review returned an invalid portfolio.");
   assertReviewQuality(report, normalizedReview, candidates);
@@ -902,6 +905,38 @@ function applyReview(
         : result.provider === "mistral"
           ? "verified-fallback"
           : "cloudflare-fallback",
+  };
+}
+
+export function normalizeReviewProse(
+  report: CreatorCompassReport,
+  review: FinalReview,
+  candidates: TerritoryRecommendation[],
+): FinalReview {
+  const northCandidate = candidates.find(
+    (candidate) => candidate.territoryId === review.northStarTerritoryId,
+  );
+  if (!northCandidate) return review;
+  const metaInstructionPattern =
+    /(?:select only defensible|no quotas? (?:filled|exceeded)|supplied (?:eligible )?candidates?|invented evidence|exceeding quotas?|territoryFitScore\s*[≥>=]|response schema|json schema)/i;
+  const badCreator =
+    review.creatorDirection.trim().length < 40 ||
+    metaInstructionPattern.test(review.creatorDirection);
+  const badTest =
+    review.testShape.trim().length < 40 ||
+    /^(?:valid|test|unknown|none|not applicable)$/i.test(review.testShape.trim()) ||
+    metaInstructionPattern.test(review.testShape);
+  const badWhy = review.why.trim().length < 30 || metaInstructionPattern.test(review.why);
+  return {
+    ...review,
+    creatorDirection: badCreator ? northCandidate.creatorProfile : review.creatorDirection,
+    testShape: badTest
+      ? (report.northStar?.testShape ??
+        "Run one bounded creator demonstration with a defined audience, conversion event, and review point.")
+      : review.testShape,
+    why: badWhy
+      ? `${northCandidate.name} has the strongest direct buyer, use-case, and evidence support in this portfolio.`
+      : review.why,
   };
 }
 

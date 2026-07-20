@@ -10,6 +10,7 @@ import {
   normalizeReviewFormat,
   normalizeReviewWhy,
   normalizeReportForDelivery,
+  normalizeReviewProse,
   normalizeReviewReadinessKeys,
   prepareEvidenceForModel,
   validateDeliverableReport,
@@ -164,6 +165,28 @@ describe("server-owned evidence provenance", () => {
     expect(
       normalized.fixFirst.every((key) => report.readiness.some((item) => item.key === key)),
     ).toBe(true);
+  });
+
+  it("repairs schema-like or undeveloped review prose from grounded candidates", () => {
+    const report = assembleDeterministicReport(recommendableProfile);
+    const core = report.territories.find((territory) => territory.classification === "core")!;
+    const normalized = normalizeReviewProse(
+      report,
+      {
+        portfolio: [{ territoryId: core.territoryId, classification: "core" }],
+        northStarTerritoryId: core.territoryId,
+        format: "workflow walkthrough",
+        creatorDirection: "Select only defensible candidates.",
+        testShape: "valid",
+        why: "JSON schema satisfied.",
+        fixFirst: [],
+        assumptions: [],
+      },
+      [core],
+    );
+    expect(normalized.creatorDirection).toBe(core.creatorProfile);
+    expect(normalized.testShape.length).toBeGreaterThan(40);
+    expect(normalized.why).toMatch(/direct buyer/i);
   });
   it("overrides the model domain and restores immutable evidence records", () => {
     const result = applyExtractedProfile(profile, "canonical.example", extracted);
