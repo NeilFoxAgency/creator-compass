@@ -1035,14 +1035,28 @@ export function assertReviewQuality(
 const reviewSystem = `You are CreatorCompass's final strategic adjudicator. Select only defensible territories from the supplied eligible candidates: 1-3 core, 0-3 adjacent, 0-2 experimental, and 0-2 risk. Never fill a quota. Core must have territoryFitScore >= 70, adjacent >= 50, and experimental >= 38 with an explicit evidence-backed bridge. Risk entries must already be marked risk candidates and explain why a tempting surface connection has weak purchase or influence intent. Choose one selected core territory as the North Star. Use only supplied evidence IDs and structured facts. Do not invent statistics, costs, ROI, acceptance, safety, or legal conclusions. Prefer a smaller coherent portfolio over weak variety. Within the fit thresholds, select enough distinct candidates that their supplied campaign concepts collectively cover every documented differentiator and at least three quarters of campaignCoverageGoals; do not omit an eligible specialist territory when it is the only defensible carrier of a differentiator.`;
 
 async function runAnalysis(env: Env, analysisId: string) {
-  const job = await env.DB.prepare("SELECT fingerprint, input_json FROM analysis_jobs WHERE id = ?")
+  const job = await env.DB.prepare(
+    "SELECT fingerprint, input_json, status FROM analysis_jobs WHERE id = ?",
+  )
     .bind(analysisId)
-    .first<{ fingerprint: string; input_json: string }>();
-  if (!job) return;
+    .first<{ fingerprint: string; input_json: string; status: string }>();
+  if (!job) return "ignored" as const;
+  const claimedAt = nowIso();
+  const staleBefore = new Date(Date.now() - 5 * 60_000).toISOString();
+  const claim = await env.DB.prepare(
+    "UPDATE analysis_jobs SET status = 'running', stage = 'reading-brand', updated_at = ? WHERE id = ? AND (status = 'queued' OR (status = 'running' AND updated_at < ?))",
+  )
+    .bind(claimedAt, analysisId, staleBefore)
+    .run();
+  if ((claim.meta.changes ?? 0) !== 1) {
+    const current = await env.DB.prepare("SELECT status FROM analysis_jobs WHERE id = ?")
+      .bind(analysisId)
+      .first<{ status: string }>();
+    return current?.status === "running" ? ("busy" as const) : ("ignored" as const);
+  }
   const input = analysisInputSchema.parse(JSON.parse(job.input_json));
   const started = Date.now();
   try {
-    await updateJob(env, analysisId, "running", "reading-brand");
     const ingestion = input.url
       ? await ingestWebsite(input.url)
       : ingestUserText(input.userProvidedText!, "provided-brand.example");
@@ -1431,6 +1445,7 @@ async function runAnalysis(env: Env, analysisId: string) {
       expirationTtl: Math.max(86_400, Number(env.REPORT_CACHE_TTL_DAYS || 30) * 86_400),
     });
     await updateJob(env, analysisId, "complete", "complete", { slug: report.slug });
+    return "complete" as const;
   } catch (error) {
     const message = error instanceof Error ? error.message : "The analysis could not be completed.";
     const failure = classifyAnalysisFailure(message);
@@ -1444,6 +1459,7 @@ async function runAnalysis(env: Env, analysisId: string) {
       .bind(crypto.randomUUID(), failure.code, Date.now() - started, nowIso())
       .run();
     console.error(JSON.stringify({ event: "analysis_failed", analysisId, reason: message }));
+    return "failed" as const;
   }
 }
 
@@ -1888,8 +1904,9 @@ export default {
   async queue(batch: MessageBatch<QueueMessage>, env: Env) {
     for (const message of batch.messages) {
       try {
-        await runAnalysis(env, message.body.analysisId);
-        message.ack();
+        const outcome = await runAnalysis(env, message.body.analysisId);
+        if (outcome === "busy") message.retry({ delaySeconds: 30 });
+        else message.ack();
       } catch (error) {
         console.error(
           JSON.stringify({
