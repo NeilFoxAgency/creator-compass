@@ -1068,11 +1068,16 @@ async function runAnalysis(env: Env, analysisId: string) {
     );
     let profile = deterministic;
     const providers = primaryProviders(env);
+    const groundedContextProviders = input.userProvidedText
+      ? [...providers].sort(
+          (left, right) => Number(left.name === "cloudflare") - Number(right.name === "cloudflare"),
+        )
+      : providers;
     let brandExtractionPath = "deterministic-fallback";
-    if (providers.length) {
+    if (groundedContextProviders.length) {
       try {
         const result = await generateWithFallback(
-          providers,
+          groundedContextProviders,
           {
             task: "brand-extraction",
             schema: extractedBrandSchema,
@@ -1117,7 +1122,7 @@ async function runAnalysis(env: Env, analysisId: string) {
     const report = assembleDeterministicReport(profile, { id, slug });
     await updateJob(env, analysisId, "running", "charting-territories");
     let candidates = buildCandidateSet(profile, 8);
-    const candidateProviders: StructuredModelProvider[] = [...providers];
+    const candidateProviders: StructuredModelProvider[] = [...groundedContextProviders];
     if (env.MISTRAL_API_KEY) {
       const mistralRepair = new MistralProvider(env.MISTRAL_API_KEY, env.MISTRAL_MODEL);
       candidateProviders.push({
@@ -1136,7 +1141,7 @@ async function runAnalysis(env: Env, analysisId: string) {
       NonNullable<CreatorCompassReport["providerPath"]>["enrichmentChunks"]
     > = [];
     let enrichedCandidateCount = 0;
-    if (hasSufficientEvidence(profile) && providers.length) {
+    if (hasSufficientEvidence(profile) && groundedContextProviders.length) {
       try {
         const enrichedItems: CandidateEnrichment["candidates"] = [];
         const enrichmentProviders = new Set<string>();
