@@ -75,7 +75,9 @@ export function App() {
 }
 
 function LandingPage() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(
+    () => new URLSearchParams(window.location.search).get("url") ?? "",
+  );
   const [advanced, setAdvanced] = useState(false);
   const [goal, setGoal] = useState("");
   const [market, setMarket] = useState("");
@@ -544,23 +546,48 @@ function ReportPage({ slug }: { slug: string }) {
 
 function Report({ report }: { report: CreatorCompassReport }) {
   const sample = isSampleReport(report.slug);
+  const draft = report.deliveryQuality?.state === "draft-analysis";
   const initialTerritory =
     (report.northStar
       ? report.territories.find((item) => item.territoryId === report.northStar?.territoryId)
-      : undefined) ?? report.territories[0]!;
-  const [active, setActive] = useState(initialTerritory.territoryId);
+      : undefined) ?? report.territories[0];
+  const [active, setActive] = useState(initialTerritory?.territoryId ?? "");
+  const [shareStatus, setShareStatus] = useState("");
   const activeTerritory =
     report.territories.find((item) => item.territoryId === active) ?? initialTerritory;
   const generated = new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(
     new Date(report.createdAt),
   );
   async function share() {
-    if (navigator.share)
-      await navigator.share({
-        title: `${report.brandProfile.brandName} Creator Compass`,
-        url: location.href,
-      });
-    else await navigator.clipboard.writeText(location.href);
+    setShareStatus("");
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${report.brandProfile.brandName} Creator Compass`,
+          text: `Creator audience directions for ${report.brandProfile.brandName}`,
+          url: location.href,
+        });
+        setShareStatus("Share sheet opened.");
+        return;
+      }
+      if (navigator.clipboard && window.isSecureContext)
+        await navigator.clipboard.writeText(location.href);
+      else {
+        const input = document.createElement("input");
+        input.value = location.href;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.append(input);
+        input.select();
+        if (!document.execCommand("copy")) throw new Error("Copy was not available.");
+        input.remove();
+      }
+      setShareStatus("Report link copied.");
+    } catch (reason) {
+      if (reason instanceof DOMException && reason.name === "AbortError") return;
+      setShareStatus("Could not share automatically. Copy the page address from your browser.");
+    }
   }
   return (
     <>
@@ -577,8 +604,29 @@ function Report({ report }: { report: CreatorCompassReport }) {
           <div className="report-actions">
             {!sample && <button onClick={share}>Share report ↗</button>}
             <button onClick={() => print()}>Print ↓</button>
+            {shareStatus && <small role="status">{shareStatus}</small>}
           </div>
         </section>
+        {draft && (
+          <section className="draft-banner" role="status">
+            <div>
+              <span className="section-number">DRAFT ANALYSIS · PROVIDER FALLBACK</span>
+              <h2>This route needs another review pass.</h2>
+              <p>
+                CreatorCompass reduced confidence because model enrichment or final strategic review
+                did not clear the delivery quality gate. Treat the directions as a draft.
+              </p>
+              {report.deliveryQuality?.reasons.map((reason) => (
+                <small key={reason}>{reason}</small>
+              ))}
+            </div>
+            <a
+              href={`/?url=${encodeURIComponent(report.brandProfile.evidence[0]?.sourceUrl ?? `https://${report.brandProfile.canonicalDomain}`)}`}
+            >
+              Regenerate analysis →
+            </a>
+          </section>
+        )}
         {report.northStar ? (
           <section className="north-star">
             <div className="north-symbol">
@@ -591,7 +639,7 @@ function Report({ report }: { report: CreatorCompassReport }) {
             </div>
             <div>
               <span className="section-number">RECOMMENDED FIRST ROUTE</span>
-              <h2>{initialTerritory.name}</h2>
+              <h2>{initialTerritory?.name}</h2>
               <p>{report.northStar.why}</p>
               <dl>
                 <div>
@@ -612,68 +660,80 @@ function Report({ report }: { report: CreatorCompassReport }) {
         ) : (
           <PreliminaryPanel report={report} />
         )}
-        <section className="territory-section">
-          <div className="section-heading">
-            <span className="section-number">
-              01 —{" "}
-              {report.recommendationState === "preliminary-hypotheses"
-                ? "PRELIMINARY TERRITORY HYPOTHESES"
-                : "CREATOR TERRITORY MAP"}
-            </span>
-            <h2>
-              {report.recommendationState === "preliminary-hypotheses" ? (
-                <>
-                  What may fit,
-                  <br />
-                  <em>pending evidence.</em>
-                </>
-              ) : (
-                <>
-                  Where the brand
-                  <br />
-                  <em>naturally belongs.</em>
-                </>
-              )}
-            </h2>
-            <p>
-              {report.recommendationState === "preliminary-hypotheses"
-                ? "These are prompts for investigation, not confident recommendations. Add the missing context above before selecting a route."
-                : "Select a point to inspect the route. Every territory is also available in the accessible card list below."}
-            </p>
-          </div>
-          <TerritoryCompass territories={report.territories} active={active} onSelect={setActive} />
-          <TerritoryDetail territory={activeTerritory} />
-        </section>
-        <section className="territory-cards" aria-label="All creator territories">
-          {(["core", "adjacent", "experimental", "risk"] as const).map((classification) => (
-            <div key={classification}>
-              <h3>
-                {classification === "risk"
-                  ? "Risk zones"
-                  : `${classification[0]!.toUpperCase()}${classification.slice(1)} territories`}
-              </h3>
-              {report.territories
-                .filter((item) => item.classification === classification)
-                .map((item) => (
-                  <button
-                    key={item.territoryId}
-                    onClick={() => {
-                      setActive(item.territoryId);
-                      document
-                        .querySelector(".territory-section")
-                        ?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                  >
-                    <span>{item.name}</span>
-                    <small>
-                      {item.score}/100 · {item.confidence} confidence
-                    </small>
-                    <i>→</i>
-                  </button>
-                ))}
+        {initialTerritory && activeTerritory && (
+          <section className="territory-section">
+            <div className="section-heading">
+              <span className="section-number">
+                01 —{" "}
+                {report.recommendationState === "preliminary-hypotheses"
+                  ? "PRELIMINARY TERRITORY HYPOTHESES"
+                  : "CREATOR TERRITORY MAP"}
+              </span>
+              <h2>
+                {report.recommendationState === "preliminary-hypotheses" ? (
+                  <>
+                    What may fit,
+                    <br />
+                    <em>pending evidence.</em>
+                  </>
+                ) : (
+                  <>
+                    Where the brand
+                    <br />
+                    <em>naturally belongs.</em>
+                  </>
+                )}
+              </h2>
+              <p>
+                {report.recommendationState === "preliminary-hypotheses"
+                  ? "These are prompts for investigation, not confident recommendations. Add the missing context above before selecting a route."
+                  : "Select a point to inspect the route. Every territory is also available in the accessible card list below."}
+              </p>
             </div>
-          ))}
-        </section>
+            <TerritoryCompass
+              territories={report.territories}
+              active={active}
+              onSelect={setActive}
+            />
+            <TerritoryDetail territory={activeTerritory} showRawScore={!draft} />
+          </section>
+        )}
+        {report.territories.length > 0 && (
+          <section className="territory-cards" aria-label="All creator territories">
+            {(["core", "adjacent", "experimental", "risk"] as const).map(
+              (classification) =>
+                report.territories.some((item) => item.classification === classification) && (
+                  <div key={classification}>
+                    <h3>
+                      {classification === "risk"
+                        ? "Risk zones"
+                        : `${classification[0]!.toUpperCase()}${classification.slice(1)} territories`}
+                    </h3>
+                    {report.territories
+                      .filter((item) => item.classification === classification)
+                      .map((item) => (
+                        <button
+                          key={item.territoryId}
+                          onClick={() => {
+                            setActive(item.territoryId);
+                            document
+                              .querySelector(".territory-section")
+                              ?.scrollIntoView({ behavior: "smooth" });
+                          }}
+                        >
+                          <span>{item.name}</span>
+                          <small>
+                            {fitLabelText(item.fitLabel, item.classification, item.score)} ·{" "}
+                            {item.evidenceConfidence ?? item.confidence} evidence confidence
+                          </small>
+                          <i>→</i>
+                        </button>
+                      ))}
+                  </div>
+                ),
+            )}
+          </section>
+        )}
         <section className="readiness">
           <div className="readiness-summary">
             <span className="section-number">02 — SPONSORSHIP READINESS</span>
@@ -690,7 +750,7 @@ function Report({ report }: { report: CreatorCompassReport }) {
                 <summary>
                   <span className={`status-dot ${item.status}`} />
                   <b>{item.label}</b>
-                  <em>{item.status}</em>
+                  <em>{item.status.replace("-", " ")}</em>
                   <i>+</i>
                 </summary>
                 <div>
@@ -735,7 +795,7 @@ function Report({ report }: { report: CreatorCompassReport }) {
               model inference, assumptions, and unknowns stay visibly distinct.
             </p>
             <p className="model-note">
-              Final review: <b>{report.aiReview.usedGpt56 ? "GPT-5.6" : "resilient fallback"}</b> ·
+              Final review: <b>{report.aiReview.usedGpt56 ? "GPT-5.6" : report.aiReview.model}</b> ·
               Methodology {report.methodologyVersion}
             </p>
           </div>
@@ -853,7 +913,7 @@ function TerritoryCompass({
   const positions = useMemo(
     () =>
       territories.map((item, index) => {
-        const angle = ((-90 + index * 45) * Math.PI) / 180;
+        const angle = ((-90 + index * (360 / Math.max(1, territories.length))) * Math.PI) / 180;
         const radius =
           item.classification === "core" ? 31 : item.classification === "adjacent" ? 38 : 44;
         return { ...item, x: 50 + Math.cos(angle) * radius, y: 50 + Math.sin(angle) * radius };
@@ -887,14 +947,32 @@ function TerritoryCompass({
   );
 }
 
-function TerritoryDetail({ territory }: { territory: TerritoryRecommendation }) {
+function fitLabelText(
+  label: TerritoryRecommendation["fitLabel"],
+  classification: TerritoryRecommendation["classification"],
+  legacyScore?: number,
+) {
+  if (classification === "risk" || label === "not-recommended") return "Not recommended";
+  if (label === "strong-fit") return "Strong fit";
+  if (label === "promising-fit") return "Promising fit";
+  if (!label && (legacyScore ?? 0) >= 70) return "Strong fit";
+  if (!label && (legacyScore ?? 0) >= 50) return "Promising fit";
+  return "Exploratory";
+}
+
+function TerritoryDetail({
+  territory,
+  showRawScore,
+}: {
+  territory: TerritoryRecommendation;
+  showRawScore: boolean;
+}) {
   return (
     <article className={`territory-detail ${territory.classification}`}>
       <div className="territory-meta">
         <span>{territory.classification}</span>
-        <b>
-          {territory.score}
-          <small>/100</small>
+        <b className="fit-label">
+          {fitLabelText(territory.fitLabel, territory.classification, territory.score)}
         </b>
       </div>
       <h3>{territory.name}</h3>
@@ -935,6 +1013,23 @@ function TerritoryDetail({ territory }: { territory: TerritoryRecommendation }) 
           ))}
         </ul>
       </details>
+      {showRawScore && territory.scoreComponents && (
+        <details className="score-diagnostics">
+          <summary>Fit methodology and raw diagnostics</summary>
+          <p>
+            Territory fit: {territory.territoryFitScore ?? territory.score}/100 · Evidence
+            confidence: {territory.evidenceConfidence ?? territory.confidence}
+          </p>
+          <dl>
+            {Object.entries(territory.scoreComponents).map(([key, value]) => (
+              <div key={key}>
+                <dt>{key.replace(/([A-Z])/g, " $1")}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+      )}
     </article>
   );
 }
