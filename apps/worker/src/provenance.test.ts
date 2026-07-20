@@ -557,6 +557,7 @@ describe("server-owned evidence provenance", () => {
             ...report.brandProfile,
             differentiators: [
               "integration of multiple AI models (Sora, Veo, Kling, Seedance, GPT Image)",
+              "prompt-based editing, reference-guided editing, integration of leading AI models",
             ],
             useCases: [],
           },
