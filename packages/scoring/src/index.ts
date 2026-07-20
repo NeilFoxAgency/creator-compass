@@ -310,21 +310,57 @@ function safeGoal(profile: BrandProfile, territory: CreatorTerritory) {
   );
 }
 
-function matchedUseCase(profile: BrandProfile, territory: CreatorTerritory) {
+const territoryFeaturePriorities: Record<string, string[]> = {
+  "seo-and-search-marketing": [
+    "keyword research",
+    "backlink analysis",
+    "rank tracking",
+    "site audit",
+  ],
+  "ai-agents-and-workflow-automation": ["MCP", "AI agent", "workflow automation", "integration"],
+  "developer-tools": ["MCP", "self-hosting", "open source", "API", "developer workflow"],
+  "open-source-and-self-hosting": ["self-hosting", "open source", "source code", "deployment"],
+  "saas-and-indie-hacking": ["usage-based pricing", "self-hosting", "product analytics"],
+  "web-development": ["site audit", "technical SEO", "Search Console", "website"],
+  "growth-marketing-and-conversion-optimization": [
+    "rank tracking",
+    "site audit",
+    "backlink analysis",
+    "competitor analysis",
+  ],
+  "agency-operations": ["site audit", "backlink analysis", "keyword research", "client reporting"],
+};
+
+function matchedUseCases(profile: BrandProfile, territory: CreatorTerritory) {
   const candidates = [
     ...(profile.useCases ?? []),
+    ...profile.differentiators,
     ...profile.products.map((item) => item.category),
-  ];
-  return (
+  ].filter((value, index, all) => all.indexOf(value) === index);
+  const priorities = territoryFeaturePriorities[territory.id] ?? [];
+  const prioritized = priorities.flatMap((priority) =>
     candidates
-      .map((value) => ({
-        value,
-        score: maxFacetMatch([value], [...territory.useCases, ...territory.categorySignals]),
-      }))
-      .sort((a, b) => b.score - a.score)[0]?.value ??
-    territory.useCases[0] ??
-    territory.name.toLowerCase()
+      .filter(
+        (value) =>
+          normalize(value).includes(normalize(priority)) ||
+          normalize(priority).includes(normalize(value)),
+      )
+      .sort((a, b) => a.length - b.length),
   );
+  const ranked = candidates
+    .map((value) => ({
+      value,
+      score: maxFacetMatch([value], [...territory.useCases, ...territory.categorySignals]),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map(({ value }) => value);
+  const selected = [...prioritized, ...ranked].filter(
+    (value, index, all) => all.indexOf(value) === index,
+  );
+  return [
+    selected[0] ?? territory.useCases[0] ?? territory.name.toLowerCase(),
+    selected[1] ?? selected[0] ?? territory.useCases[0] ?? territory.name.toLowerCase(),
+  ] as const;
 }
 
 function recommendation(
@@ -335,7 +371,7 @@ function recommendation(
   const { territory, territoryFitScore, scoreComponents, evidenceConfidence } = scored;
   const product = profile.products[0]?.name ?? profile.brandName;
   const goal = safeGoal(profile, territory);
-  const useCase = matchedUseCase(profile, territory);
+  const [useCase, secondaryUseCase] = matchedUseCases(profile, territory);
   const format = territory.commonContentFormats[0] ?? "practical demonstration";
   const secondFormat = territory.commonContentFormats[1] ?? "comparison";
   const evidenceIds = relevantEvidenceIds(profile, [
@@ -375,8 +411,8 @@ function recommendation(
         openingHook: `Here is how I use ${product} to ${goal}—and where it does not replace judgment.`,
       },
       {
-        title: `${product}: ${secondFormat}`,
-        concept: `Compare ${product} with the audience's current way of handling ${useCase}, using criteria drawn from the documented buyer problem rather than a generic feature list.`,
+        title: `${secondaryUseCase}: ${secondFormat}`,
+        concept: `Compare ${product} with the audience's current way of handling ${secondaryUseCase}, using criteria drawn from the documented buyer problem rather than a generic feature list.`,
         openingHook: `If you need to ${goal}, these are the tradeoffs I would check before choosing a route.`,
       },
     ],

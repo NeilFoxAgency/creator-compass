@@ -1,5 +1,5 @@
 # Evaluation
 
-Run `pnpm eval` to generate `outputs/evaluation/evaluation.json` and `.md` for twelve fixed brand cases: outdoor product, subscription service, local service, high-claims wellness product, productivity product, skincare brand, pet subscription, education product, sustainability product, hobby product, broad retailer, and sparse brand.
+Run `pnpm eval` to generate `outputs/evaluation/evaluation.json` and `.md` for eight fixed cases: OpenSEO, B2B SaaS, an open-source developer tool, a consumer beauty product, a physical e-commerce product, a local service, a broad multi-category company, and an insufficient-evidence brand.
 
-The golden-output policy avoids exact prose. It verifies schema compliance, exact portfolio composition, uniqueness, evidence coverage, prohibited claims, visible unknowns, and North Star availability. Human review should additionally judge plausibility, diversity, specificity, and whether the Experimental direction is surprising but defensible.
+The golden-output policy avoids exact prose. It verifies schema compliance, bounded variable portfolios, eligibility, prohibited-category exclusion, product-aware readiness, OpenSEO rank-tracking safety, grammatical deterministic copy, abstention, and North Star availability. Human review should additionally judge plausibility, specificity, evidence relevance, risk usefulness, and whether every Experimental bridge is defensible.

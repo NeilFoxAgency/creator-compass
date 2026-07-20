@@ -13,8 +13,8 @@ CreatorCompass uses one Cloudflare Worker for the public Hono API, Queue consume
 
 ## Failure boundaries
 
-Website failure becomes `needs-input`; the user may paste a description. Extraction failure uses conservative deterministic profiling. GPT-5.6 failure uses Workers AI review when available, then the deterministic portfolio. YouTube failure never changes or removes a territory recommendation.
+Website failure becomes `needs-input`; the user may paste a description. Extraction failure uses conservative deterministic profiling. GPT-5.6 failure uses Workers AI and then Mistral review when available. A deterministic-heavy path becomes a visible draft analysis instead of a polished full report. YouTube failure never changes or removes a territory recommendation.
 
 ## Security invariants
 
-Every URL and redirect is revalidated. Only HTTP(S), standard ports, bounded HTML responses, and a small page count are allowed. Model outputs are Zod-validated before entering product state. Public creation is rate-limited and deduplicated. Reports contain no lead contact data.
+Every URL and redirect is revalidated. Only HTTP(S), standard ports, bounded HTML responses, and a small page count are allowed. Model outputs are Zod-validated before entering product state. Public creation is Turnstile-protected, rate-limited, and deduplicated. Model evidence IDs must resolve to immutable server-owned records, and reports contain no lead contact data.

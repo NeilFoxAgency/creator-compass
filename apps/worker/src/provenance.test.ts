@@ -14,6 +14,7 @@ const profile: BrandProfile = {
   summary:
     "A focused visual planning system that helps remote creative teams choose priorities and reduce distraction every week.",
   products: [{ name: "FocusKit Planner", category: "productivity" }],
+  productType: "software",
   targetCustomers: ["remote creative teams"],
   customerNeeds: ["choose priorities"],
   differentiators: ["visual weekly planning"],
@@ -85,6 +86,16 @@ describe("server-owned evidence provenance", () => {
     expect(result.buyerGoalVerbPhrases).toEqual(["evaluate technology"]);
   });
 
+  it("does not let model extraction downgrade evidence-classified software to a service", () => {
+    const result = applyExtractedProfile(profile, "canonical.example", {
+      ...extracted,
+      productType: "service",
+      campaignAssetType: "service-experience",
+    });
+    expect(result.productType).toBe("software");
+    expect(result.campaignAssetType).toBe("software-access");
+  });
+
   it("rejects fabricated extraction evidence IDs", () => {
     expect(() =>
       applyExtractedProfile(profile, "canonical.example", {
@@ -115,8 +126,16 @@ describe("server-owned evidence provenance", () => {
       audienceConnection: "Specific connection",
       creatorProfile: "Specific creator",
       campaignConcepts: [
-        { title: "One", concept: "One concept", openingHook: "One hook" },
-        { title: "Two", concept: "Two concept", openingHook: "Two hook" },
+        {
+          title: "One",
+          concept: "Show the documented workflow from initial input through a useful final output.",
+          openingHook: "One hook",
+        },
+        {
+          title: "Two",
+          concept: "Compare the documented workflow with the audience's current manual process.",
+          openingHook: "Two hook",
+        },
       ] as [(typeof first.campaignConcepts)[number], (typeof first.campaignConcepts)[number]],
       viewerObjection: "A specific objection",
       keyRisk: "A specific risk",
@@ -148,8 +167,18 @@ describe("server-owned evidence provenance", () => {
       audienceConnection: "A grounded audience connection",
       creatorProfile: "A practical educator",
       campaignConcepts: [
-        { title: "Grounded test", concept: "Show the product in use", openingHook: "Start here" },
-        { title: "Tradeoff", concept: "Explain a limitation", openingHook: "What changes?" },
+        {
+          title: "Grounded test",
+          concept:
+            "Show the documented product workflow from its initial input through the final output.",
+          openingHook: "Start here",
+        },
+        {
+          title: "Tradeoff",
+          concept:
+            "Explain a documented limitation while demonstrating the audience's actual workflow.",
+          openingHook: "What changes?",
+        },
       ] as [(typeof first.campaignConcepts)[number], (typeof first.campaignConcepts)[number]],
       viewerObjection: "Viewers may question fit",
       keyRisk: "The connection could feel forced",
@@ -178,6 +207,38 @@ describe("server-owned evidence provenance", () => {
     ).toThrow(/placeholders|unsupported/);
   });
 
+  it("rejects a campaign title repeated as an undeveloped concept", () => {
+    const candidates = buildCandidateSet(profile, 12);
+    const first = candidates[0]!;
+    expect(() =>
+      applyCandidateEnrichment(
+        candidates,
+        {
+          candidates: [
+            {
+              territoryId: first.territoryId,
+              audienceConnection: "A grounded audience connection",
+              creatorProfile: "A practical educator",
+              campaignConcepts: [
+                { title: "Workflow guide", concept: "Workflow guide", openingHook: "Start here" },
+                {
+                  title: "Comparison",
+                  concept:
+                    "Compare the documented workflow with the audience's current manual process.",
+                  openingHook: "What changes?",
+                },
+              ],
+              viewerObjection: "Viewers may question fit",
+              keyRisk: "The connection could feel forced",
+              evidenceIds: ["web-1-1"],
+            },
+          ],
+        },
+        profile.evidence,
+      ),
+    ).toThrow(/underdeveloped campaign concept/);
+  });
+
   it("replaces schema-error prose returned as a North Star format", () => {
     const candidate = buildCandidateSet(profile, 12)[0]!;
     expect(
@@ -187,5 +248,6 @@ describe("server-owned evidence provenance", () => {
       ),
     ).toBe(candidate.sponsorshipFormats[0]);
     expect(normalizeReviewFormat("case-study teardown", candidate)).toBe("case-study teardown");
+    expect(normalizeReviewFormat("JSON", candidate)).toBe(candidate.sponsorshipFormats[0]);
   });
 });

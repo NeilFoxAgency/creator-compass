@@ -233,11 +233,13 @@ export async function generateWithFallback<T>(
   providers: StructuredModelProvider[],
   request: StructuredGenerationRequest<T>,
   onAttempt?: (attempt: ProviderAttempt<T>) => void | Promise<void>,
+  validateResult?: (result: ModelResult<T>) => void | Promise<void>,
 ): Promise<ModelResult<T>> {
   const failures: string[] = [];
   for (const provider of providers) {
     try {
       const result = await provider.generate(request);
+      await validateResult?.(result);
       await onAttempt?.({ provider: provider.name, succeeded: true, result });
       return {
         ...result,

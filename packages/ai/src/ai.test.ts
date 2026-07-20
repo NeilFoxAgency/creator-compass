@@ -46,6 +46,45 @@ describe("provider fallback", () => {
     expect(result.fallbackReason).toContain("cloudflare");
     expect(attempts).toBe(1);
   });
+
+  it("moves to the next provider when post-schema quality validation fails", async () => {
+    const attempts: string[] = [];
+    const provider = (name: "cloudflare" | "mistral", value: string): StructuredModelProvider => ({
+      name,
+      generate: async (request) => ({
+        data: request.schema.parse({ value }),
+        provider: name,
+        model: `mock-${name}`,
+        latencyMs: 1,
+        inputUnits: 1,
+        outputUnits: 1,
+        retryCount: 0,
+        schemaValid: true,
+        promptVersion: request.promptVersion,
+      }),
+    });
+    const result = await generateWithFallback(
+      [provider("cloudflare", "title only"), provider("mistral", "developed tactical concept")],
+      {
+        task: "candidate-reasoning",
+        schema: z.object({ value: z.string() }),
+        input: {},
+        system: "test",
+        maxOutputTokens: 10,
+        temperature: 0,
+        promptVersion: "v1",
+      },
+      (attempt) => {
+        attempts.push(`${attempt.provider}:${attempt.succeeded}`);
+      },
+      (candidate) => {
+        if (candidate.data.value === "title only") throw new Error("underdeveloped concept");
+      },
+    );
+    expect(result.provider).toBe("mistral");
+    expect(result.fallbackReason).toContain("underdeveloped concept");
+    expect(attempts).toEqual(["cloudflare:false", "mistral:true"]);
+  });
 });
 
 describe("Cloudflare structured responses", () => {
