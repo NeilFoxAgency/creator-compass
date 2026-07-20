@@ -11,7 +11,7 @@ CreatorCompass turns one input—a brand website—into an evidence-backed creat
 - **Territory Mapping**: Identifies core, adjacent, experimental, and risk territories based on brand evidence.
 - **Readiness Review**: 10 dimensions with evidence, confidence scores, and practical improvements.
 - **Campaign Directions**: Specific formats, hooks, and next steps tailored to brand.
-- **UTM Integration**: Built-in support for tracking creator campaigns with UTM parameters for attribution and reporting.
+- **UTM Integration**: Built-in support for tracking creator campaigns with UTM parameters for attribution and reporting. Reports now include sample UTM link templates for easy implementation in outreach and tracking.
 - **Evidence-First**: All recommendations grounded in public website data; no hallucinations.
 
 ## For Neil Fox Agency & Brands
