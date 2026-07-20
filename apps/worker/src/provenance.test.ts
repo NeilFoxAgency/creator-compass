@@ -82,9 +82,9 @@ describe("server-owned evidence provenance", () => {
       jobsToBeDone: ["marketing software"],
       buyerGoalVerbPhrases: ["technology"],
     });
-    expect(result.customerNeeds).toEqual(["evaluate SEO platform"]);
-    expect(result.jobsToBeDone).toEqual(["evaluate marketing software"]);
-    expect(result.buyerGoalVerbPhrases).toEqual(["evaluate technology"]);
+    expect(result.customerNeeds).toEqual(expect.arrayContaining(["evaluate SEO platform"]));
+    expect(result.jobsToBeDone).toEqual(expect.arrayContaining(["evaluate marketing software"]));
+    expect(result.buyerGoalVerbPhrases).toEqual(expect.arrayContaining(["evaluate technology"]));
   });
 
   it("does not let model extraction downgrade evidence-classified software to a service", () => {
@@ -313,5 +313,27 @@ describe("server-owned evidence provenance", () => {
         assumptions: [],
       }),
     ).toThrow(/meta-instructions|undeveloped test plan/);
+  });
+
+  it("rejects a review that omits a documented campaign differentiator", () => {
+    const report = assembleDeterministicReport({
+      ...profile,
+      differentiators: ["self-hosting"],
+      useCases: ["weekly planning"],
+    });
+    expect(() =>
+      assertReviewQuality(report, {
+        portfolio: [{ territoryId: report.territories[0]!.territoryId, classification: "core" }],
+        northStarTerritoryId: report.territories[0]!.territoryId,
+        format: "integrated demonstration",
+        creatorDirection:
+          "Use a practitioner who can demonstrate the documented workflow and explain its limits.",
+        testShape:
+          "Run one bounded creator demonstration with a defined audience and conversion event.",
+        why: "The selected territory has the strongest buyer and use-case overlap in the evidence.",
+        fixFirst: [report.readiness[0]!.key],
+        assumptions: [],
+      }),
+    ).toThrow(/omitted documented campaign coverage/);
   });
 });

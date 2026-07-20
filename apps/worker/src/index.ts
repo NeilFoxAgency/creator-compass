@@ -228,6 +228,14 @@ export function applyExtractedProfile(
     /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid|monitor|self-host|integrate|perform|inspect|summarize|access|retrieve|review|read|save|conduct)\b/i;
   const repairActionPhrase = (value: string) =>
     verbPhrase.test(value.trim()) ? value.trim() : `evaluate ${value.trim()}`;
+  const mergeText = (...groups: Array<string[] | undefined>) => [
+    ...new Set(
+      groups
+        .flatMap((group) => group ?? [])
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
   const preserveSoftwareClassification =
     deterministic.productType === "software" && fields.productType !== "software";
   return brandProfileSchema.parse({
@@ -245,21 +253,23 @@ export function applyExtractedProfile(
       preserveSoftwareClassification && fields.demonstrability === "not-applicable"
         ? deterministic.demonstrability
         : fields.demonstrability,
-    customerNeeds: fields.customerNeeds.map(repairActionPhrase),
-    buyerRoles: fields.buyerRoles?.length ? fields.buyerRoles : deterministic.buyerRoles,
-    userRoles: fields.userRoles?.length ? fields.userRoles : deterministic.userRoles,
-    industries: fields.industries?.length ? fields.industries : deterministic.industries,
-    useCases: fields.useCases?.length ? fields.useCases : deterministic.useCases,
-    jobsToBeDone: (fields.jobsToBeDone?.length
-      ? fields.jobsToBeDone
-      : deterministic.jobsToBeDone
-    )?.map(repairActionPhrase),
-    buyerGoalVerbPhrases: (fields.buyerGoalVerbPhrases?.length
-      ? fields.buyerGoalVerbPhrases
-      : fields.jobsToBeDone?.length
-        ? fields.jobsToBeDone
-        : deterministic.buyerGoalVerbPhrases
-    )?.map(repairActionPhrase),
+    targetCustomers: mergeText(fields.targetCustomers, deterministic.targetCustomers),
+    customerNeeds: mergeText(fields.customerNeeds, deterministic.customerNeeds).map(
+      repairActionPhrase,
+    ),
+    differentiators: mergeText(fields.differentiators, deterministic.differentiators),
+    buyerRoles: mergeText(fields.buyerRoles, deterministic.buyerRoles),
+    userRoles: mergeText(fields.userRoles, deterministic.userRoles),
+    industries: mergeText(fields.industries, deterministic.industries),
+    useCases: mergeText(fields.useCases, deterministic.useCases),
+    jobsToBeDone: mergeText(fields.jobsToBeDone, deterministic.jobsToBeDone).map(
+      repairActionPhrase,
+    ),
+    buyerGoalVerbPhrases: mergeText(
+      fields.buyerGoalVerbPhrases,
+      fields.jobsToBeDone,
+      deterministic.buyerGoalVerbPhrases,
+    ).map(repairActionPhrase),
     canonicalDomain,
     evidence: deterministic.evidence,
   });
@@ -495,7 +505,7 @@ function applyReview(
 ) {
   if (!validPortfolio(review, candidates))
     throw new Error("The strategic review returned an invalid portfolio.");
-  assertReviewQuality(report, review);
+  assertReviewQuality(report, review, candidates);
   const candidateMap = new Map(candidates.map((candidate) => [candidate.territoryId, candidate]));
   const northCandidate = candidateMap.get(review.northStarTerritoryId)!;
   report.territories = review.portfolio.map((item) => ({
@@ -529,7 +539,38 @@ function applyReview(
   };
 }
 
-export function assertReviewQuality(report: CreatorCompassReport, review: FinalReview) {
+function factSegments(values: string[]) {
+  return values
+    .flatMap((value) => value.split(/\s*(?:,|\bwith\b|\band\b|\bor\b)\s*/i))
+    .map((value) => value.trim())
+    .filter((value) => value.length >= 4);
+}
+
+function factCovered(fact: string, text: string) {
+  const generic = new Set([
+    "with",
+    "from",
+    "that",
+    "this",
+    "model",
+    "platform",
+    "data",
+    "access",
+    "alternative",
+  ]);
+  const tokens = fact
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length >= 3 && !generic.has(token));
+  return tokens.some((token) => text.includes(token));
+}
+
+export function assertReviewQuality(
+  report: CreatorCompassReport,
+  review: FinalReview,
+  candidates: TerritoryRecommendation[] = report.territories,
+) {
   const metaInstructionPattern =
     /(?:select only defensible|no quotas? (?:filled|exceeded)|supplied (?:eligible )?candidates?|invented evidence|exceeding quotas?|territoryFitScore\s*[≥>=])/i;
   if (
@@ -543,9 +584,29 @@ export function assertReviewQuality(report: CreatorCompassReport, review: FinalR
   const readinessKeys = new Set(report.readiness.map((dimension) => dimension.key));
   if (review.fixFirst.some((key) => !readinessKeys.has(key)))
     throw new Error("The strategic review returned an unknown readiness priority.");
+  const selected = new Set(review.portfolio.map((item) => item.territoryId));
+  const selectedConceptText = candidates
+    .filter((candidate) => selected.has(candidate.territoryId))
+    .flatMap((candidate) => candidate.campaignConcepts)
+    .map((concept) => `${concept.title} ${concept.concept} ${concept.openingHook}`)
+    .join(" ")
+    .toLowerCase();
+  const differentiatorGoals = factSegments(report.brandProfile.differentiators);
+  const useCaseGoals = factSegments(report.brandProfile.useCases ?? []);
+  const missingDifferentiators = differentiatorGoals.filter(
+    (fact) => !factCovered(fact, selectedConceptText),
+  );
+  const coveredUseCases = useCaseGoals.filter((fact) => factCovered(fact, selectedConceptText));
+  if (
+    missingDifferentiators.length ||
+    (useCaseGoals.length && coveredUseCases.length / useCaseGoals.length < 0.75)
+  )
+    throw new Error(
+      `The strategic review omitted documented campaign coverage: ${missingDifferentiators.join(", ") || "use cases"}.`,
+    );
 }
 
-const reviewSystem = `You are CreatorCompass's final strategic adjudicator. Select only defensible territories from the supplied eligible candidates: 1-3 core, 0-3 adjacent, 0-2 experimental, and 0-2 risk. Never fill a quota. Core must have territoryFitScore >= 70, adjacent >= 50, and experimental >= 38 with an explicit evidence-backed bridge. Risk entries must already be marked risk candidates and explain why a tempting surface connection has weak purchase or influence intent. Choose one selected core territory as the North Star. Use only supplied evidence IDs and structured facts. Do not invent statistics, costs, ROI, acceptance, safety, or legal conclusions. Prefer a smaller coherent portfolio over weak variety, but retain defensible adjacent territories when their campaign concepts add a distinct documented use case or buyer role and help cover the supplied campaignCoverageGoals.`;
+const reviewSystem = `You are CreatorCompass's final strategic adjudicator. Select only defensible territories from the supplied eligible candidates: 1-3 core, 0-3 adjacent, 0-2 experimental, and 0-2 risk. Never fill a quota. Core must have territoryFitScore >= 70, adjacent >= 50, and experimental >= 38 with an explicit evidence-backed bridge. Risk entries must already be marked risk candidates and explain why a tempting surface connection has weak purchase or influence intent. Choose one selected core territory as the North Star. Use only supplied evidence IDs and structured facts. Do not invent statistics, costs, ROI, acceptance, safety, or legal conclusions. Prefer a smaller coherent portfolio over weak variety. Within the fit thresholds, select enough distinct candidates that their supplied campaign concepts collectively cover every documented differentiator and at least three quarters of campaignCoverageGoals; do not omit an eligible specialist territory when it is the only defensible carrier of a differentiator.`;
 
 async function runAnalysis(env: Env, analysisId: string) {
   const job = await env.DB.prepare("SELECT fingerprint, input_json FROM analysis_jobs WHERE id = ?")
