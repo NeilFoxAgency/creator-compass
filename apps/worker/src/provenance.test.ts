@@ -96,6 +96,14 @@ describe("server-owned evidence provenance", () => {
     expect(result.campaignAssetType).toBe("software-access");
   });
 
+  it("retains a substantive evidence-derived summary over an extraction fragment", () => {
+    const result = applyExtractedProfile(profile, "canonical.example", {
+      ...extracted,
+      summary: "Visual planning software.",
+    });
+    expect(result.summary).toBe(profile.summary);
+  });
+
   it("rejects fabricated extraction evidence IDs", () => {
     expect(() =>
       applyExtractedProfile(profile, "canonical.example", {

@@ -214,6 +214,7 @@ export function applyExtractedProfile(
   return brandProfileSchema.parse({
     ...deterministic,
     ...fields,
+    summary: fields.summary.trim().length >= 40 ? fields.summary : deterministic.summary,
     products: fields.products.length ? fields.products : deterministic.products,
     productType: preserveSoftwareClassification ? "software" : fields.productType,
     businessModel:
@@ -221,6 +222,10 @@ export function applyExtractedProfile(
     campaignAssetType: preserveSoftwareClassification
       ? "software-access"
       : fields.campaignAssetType,
+    demonstrability:
+      preserveSoftwareClassification && fields.demonstrability === "not-applicable"
+        ? deterministic.demonstrability
+        : fields.demonstrability,
     customerNeeds: fields.customerNeeds.map(repairActionPhrase),
     buyerRoles: fields.buyerRoles?.length ? fields.buyerRoles : deterministic.buyerRoles,
     userRoles: fields.userRoles?.length ? fields.userRoles : deterministic.userRoles,
