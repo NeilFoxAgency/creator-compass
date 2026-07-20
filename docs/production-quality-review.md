@@ -1,5 +1,104 @@
 # Production quality review
 
+## Recommendation-quality overhaul — 2026-07-19
+
+Production: <https://creatorcompass.neilfoxagency.com>  
+Methodology: `2026.07.3`  
+Reviewed deployment: `0ed7ac46-c673-442d-ba27-7165d1940bc3`  
+Fresh OpenSEO report: <https://creatorcompass.neilfoxagency.com/reports/openseo-so-012fe0bb>
+
+### Root causes and correction
+
+The previous OpenSEO portfolio was produced by substring matches (`self` in self-hosting matched
+self-expression, self-reliance, and self-sufficiency), generic-token matches (`digital` matched
+gaming), and a roughly 59-point readiness floor applied to every territory. Bottom taxonomy entries
+were appended to the candidate pool and the review contract then filled fixed slots. Candidate
+enrichment failed by chunk and the deterministic fallback inserted arbitrary noun fragments into verb
+positions. Readiness also treated physical-product operations as relevant to software and confused
+rank tracking with campaign attribution.
+
+The current pipeline separates territory fit, evidence confidence, and brand readiness; classifies the
+buyer, business model, product, use cases, and jobs; filters eligibility before ranking; selects
+strategic risks separately; and uses bounded maximums instead of fixed counts. Campaign concepts and
+fit/evidence records are server grounded. A model can enrich audience reasoning, profiles, objections,
+and risks, but cannot replace the validated concepts, scores, evidence, or canonical domain. Final
+review postflight rejects meta-instructions, unknown readiness keys, undeveloped tests, and portfolios
+that omit documented differentiators.
+
+### Fresh OpenSEO result
+
+The persisted brand profile identifies OpenSEO as B2B open-source software for SEO professionals and
+developers, with keyword research, backlink analysis, rank tracking, site audits, self-hosting, MCP,
+and AI-agent integration. The report uses software readiness dimensions and correctly leaves campaign
+attribution unknown; rank tracking does not satisfy it.
+
+| Classification | Territory                         | Fit label  | Raw diagnostic fit |
+| -------------- | --------------------------------- | ---------- | -----------------: |
+| Core           | AI agents and workflow automation | Strong fit |                 92 |
+| Core           | SEO and search marketing          | Strong fit |                 90 |
+| Core           | Open source and self-hosting      | Strong fit |                 88 |
+| Adjacent       | Developer tools                   | Strong fit |                 88 |
+| Adjacent       | Web development                   | Strong fit |                 81 |
+
+The prior persisted report ranked Consumer Technology 65; Beauty Tutorials, Camping, Gaming, and
+Gardening 61; and Entrepreneurship, Zero-Waste Making, and Writing/Journaling 59. The new report has
+no unrelated lifestyle recommendation. Its concepts explicitly cover keyword research, backlinks,
+rank tracking, site audits, open-source positioning, usage-based billing, self-hosting, and MCP/agent
+integration. The selected component breakdowns are persisted in the report; for example SEO is
+category/use case 100, buyer role 100, jobs-to-be-done 55, content naturalness 90, purchase intent 92,
+evidence 92, penalty 0. Unrelated consumer territories now score close to zero and fail eligibility
+instead of inheriting readiness points.
+
+Provider path for the fresh report:
+
+- Brand extraction: Cloudflare Workers AI.
+- Candidate enrichment: Mistral plus Cloudflare, all four bounded chunks successful, with
+  server-grounded campaign concepts.
+- Final strategic review: `mistral-small-2603` verified fallback.
+- GPT-5.6 genuinely used: no; OpenAI final review was unavailable and every OpenAI attempt that UTC
+  day failed closed.
+- Delivery quality: full report, 100% candidate enrichment, grammar gate passed.
+
+The cumulative production diagnostics captured on 2026-07-20 UTC were:
+
+| Provider      | Task                 | Calls | Failures | Successes / uses |
+| ------------- | -------------------- | ----: | -------: | ---------------: |
+| Cloudflare    | brand extraction     |    18 |        3 |               15 |
+| Cloudflare    | candidate enrichment |    49 |       30 |               19 |
+| Cloudflare    | final review         |    13 |       11 |                2 |
+| Mistral       | brand extraction     |     3 |        0 |                3 |
+| Mistral       | candidate enrichment |    35 |       17 |               18 |
+| Mistral       | final review         |     9 |        1 |                8 |
+| OpenAI        | final review         |    13 |       13 |                0 |
+| Deterministic | candidate fallback   |    18 |        0 |               18 |
+| Deterministic | final fallback       |     3 |        0 |                3 |
+
+The protected Mistral smoke test also passed on `mistral-small-2603`: schema-valid output, one call,
+zero failures, 65 input units, and 32 output units.
+
+### User-interface and print review
+
+- Desktop Share now copies the canonical report URL and shows `Report link copied.`; touch devices
+  retain the native share sheet.
+- Fit labels and evidence confidence are primary. Raw fit numbers remain only in the diagnostics
+  disclosure.
+- Chrome 150 printed the production report at desktop width to an eight-page Letter PDF. Every page
+  contains report content, major cards remain intact, and the final agency CTA now shares page eight
+  with the methodology block instead of following an almost blank page.
+- The reviewed PDF artifact is `tmp/pdfs/openseo-so-012fe0bb.pdf` and is intentionally not committed.
+
+### Current limitations
+
+- The fresh report did not use GPT-5.6 because all 13 OpenAI final-review attempts that UTC day failed;
+  Mistral completed the verified final review. Provider provenance is displayed and persisted.
+- Deterministic campaign language prioritizes evidence safety over editorial variety. The concepts are
+  brand- and territory-specific, but share a deliberately consistent walkthrough/comparison shape.
+- AI-provider variance can increase report latency; failed or under-covered reviews trigger a changed
+  Mistral repair strategy and otherwise downgrade visibly to draft.
+- YouTube expansion remains disabled.
+
+---
+
 Date: 2026-07-16  
 Production: <https://creatorcompass.neilfoxagency.com>  
 Methodology: `2026.07.2`  
