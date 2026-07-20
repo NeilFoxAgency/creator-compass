@@ -492,7 +492,7 @@ export function normalizeReviewWhy(why: string) {
     .replace(/(?:raw\s+)?fit score\s*(?:of\s+)?\d+/gi, "strong fit");
 }
 
-function normalizeReportForDelivery(value: unknown) {
+export function normalizeReportForDelivery(value: unknown) {
   const report = creatorCompassReportSchema.parse(value);
   if (!report.northStar) return report;
   const northCandidate = report.territories.find(
@@ -504,6 +504,7 @@ function normalizeReportForDelivery(value: unknown) {
     northStar: {
       ...report.northStar,
       format: normalizeReviewFormat(report.northStar.format, northCandidate),
+      why: normalizeReviewWhy(report.northStar.why),
     },
   };
 }

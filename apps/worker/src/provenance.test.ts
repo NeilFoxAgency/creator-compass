@@ -7,6 +7,7 @@ import {
   assertReviewQuality,
   normalizeReviewFormat,
   normalizeReviewWhy,
+  normalizeReportForDelivery,
   prepareEvidenceForModel,
 } from "./index";
 
@@ -305,6 +306,24 @@ describe("server-owned evidence provenance", () => {
         "This route has high territoryFitScore (92) and a fit score of 88 in diagnostics.",
       ),
     ).toBe("This route has strong fit and a strong fit in diagnostics.");
+  });
+
+  it("normalizes persisted North Star prose at delivery time", () => {
+    const report = assembleDeterministicReport(profile);
+    const candidate = report.territories[0]!;
+    expect(
+      normalizeReportForDelivery({
+        ...report,
+        northStar: {
+          territoryId: candidate.territoryId,
+          format: candidate.sponsorshipFormats[0]!,
+          creatorDirection: candidate.creatorProfile,
+          testShape: "Run a bounded creator test.",
+          why: "This route has high territoryFitScore (92).",
+          fixFirst: [],
+        },
+      }).northStar?.why,
+    ).toBe("This route has strong fit.");
   });
 
   it("rejects final-review meta-instructions and fake test plans", () => {
