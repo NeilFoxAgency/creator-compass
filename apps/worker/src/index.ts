@@ -483,6 +483,15 @@ export function normalizeReviewFormat(format: string, northCandidate: TerritoryR
     : format;
 }
 
+export function normalizeReviewWhy(why: string) {
+  return why
+    .replace(
+      /(?:high\s+|low\s+)?territoryFitScore\s*(?:\(\s*\d+\s*\)|[:=]?\s*\d+)?/gi,
+      "strong fit",
+    )
+    .replace(/(?:raw\s+)?fit score\s*(?:of\s+)?\d+/gi, "strong fit");
+}
+
 function normalizeReportForDelivery(value: unknown) {
   const report = creatorCompassReportSchema.parse(value);
   if (!report.northStar) return report;
@@ -524,7 +533,7 @@ function applyReview(
       ? (report.northStar?.testShape ??
         "Run one bounded creator test with a documented audience, conversion event, and review point.")
       : review.testShape,
-    why: review.why,
+    why: normalizeReviewWhy(review.why),
     fixFirst: review.fixFirst,
   };
   report.assumptions = [...new Set([...report.assumptions, ...review.assumptions])];

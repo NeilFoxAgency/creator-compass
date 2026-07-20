@@ -6,6 +6,7 @@ import {
   applyExtractedProfile,
   assertReviewQuality,
   normalizeReviewFormat,
+  normalizeReviewWhy,
   prepareEvidenceForModel,
 } from "./index";
 
@@ -296,6 +297,14 @@ describe("server-owned evidence provenance", () => {
     ).toBe(candidate.sponsorshipFormats[0]);
     expect(normalizeReviewFormat("case-study teardown", candidate)).toBe("case-study teardown");
     expect(normalizeReviewFormat("JSON", candidate)).toBe(candidate.sponsorshipFormats[0]);
+  });
+
+  it("keeps raw territory fit numbers out of prominent review prose", () => {
+    expect(
+      normalizeReviewWhy(
+        "This route has high territoryFitScore (92) and a fit score of 88 in diagnostics.",
+      ),
+    ).toBe("This route has strong fit and a strong fit in diagnostics.");
   });
 
   it("rejects final-review meta-instructions and fake test plans", () => {
