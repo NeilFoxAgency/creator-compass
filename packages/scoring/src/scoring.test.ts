@@ -236,6 +236,12 @@ describe("product-aware readiness", () => {
     expect(tracking).toMatchObject({ status: "unknown", score: null, evidenceIds: [] });
   });
 
+  it("uses readiness keys in deterministic North Star repair priorities", () => {
+    const report = assembleDeterministicReport(openSeo);
+    const readinessKeys = new Set(report.readiness.map((item) => item.key));
+    expect(report.northStar?.fixFirst.every((key) => readinessKeys.has(key))).toBe(true);
+  });
+
   it("uses software readiness dimensions for SaaS and open-source tools", () => {
     const dimensions = scoreReadiness(openSeo);
     expect(dimensions.map((item) => item.key)).toEqual(

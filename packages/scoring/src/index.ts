@@ -845,7 +845,7 @@ export function assembleDeterministicReport(
             fixFirst: readiness
               .filter((item) => item.status === "weak" || item.status === "unknown")
               .slice(0, 3)
-              .map((item) => item.improvement),
+              .map((item) => item.key),
           }
         : null,
     nextSteps:

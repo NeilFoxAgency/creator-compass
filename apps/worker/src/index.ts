@@ -257,7 +257,9 @@ export function applyExtractedProfile(
     customerNeeds: mergeText(fields.customerNeeds, deterministic.customerNeeds).map(
       repairActionPhrase,
     ),
-    differentiators: mergeText(fields.differentiators, deterministic.differentiators),
+    differentiators: fields.differentiators.length
+      ? fields.differentiators
+      : deterministic.differentiators,
     buyerRoles: mergeText(fields.buyerRoles, deterministic.buyerRoles),
     userRoles: mergeText(fields.userRoles, deterministic.userRoles),
     industries: mergeText(fields.industries, deterministic.industries),
@@ -920,6 +922,43 @@ async function runAnalysis(env: Env, analysisId: string) {
         console.warn(
           JSON.stringify({
             event: "mistral_review_failed",
+            analysisId,
+            reason: error instanceof Error ? error.message : "unknown",
+          }),
+        );
+      }
+    }
+    if (report.recommendationState === "recommendation" && !reviewResult && env.MISTRAL_API_KEY) {
+      try {
+        const repairResult = await new MistralProvider(
+          env.MISTRAL_API_KEY,
+          env.MISTRAL_MODEL,
+        ).generate({
+          task: "final-review",
+          schema: finalReviewSchema,
+          input: {
+            ...reviewInput,
+            requiredPortfolioBlueprint: report.territories.map((territory) => ({
+              territoryId: territory.territoryId,
+              classification: territory.classification,
+              campaignConcepts: territory.campaignConcepts,
+            })),
+            allowedReadinessKeys: report.readiness.map((dimension) => dimension.key),
+          },
+          system: `${reviewSystem} REPAIR MODE: Previous reviews omitted documented proof points. Use the requiredPortfolioBlueprint unless removing an entry still preserves every differentiator and at least three quarters of use cases. fixFirst may contain only allowedReadinessKeys. Return developed campaign direction, test shape, and rationale prose, never schema commentary.`,
+          maxOutputTokens: 2200,
+          temperature: 0,
+          promptVersion: "review-v2-repair",
+        });
+        applyReview(report, repairResult.data, candidates, repairResult);
+        reviewResult = repairResult;
+        await recordUsage(env, repairResult, "mistral", "final-review");
+        finalReviewPath = "mistral-verified-repair";
+      } catch (error) {
+        await recordUsage(env, null, "mistral", "final-review", true);
+        console.warn(
+          JSON.stringify({
+            event: "mistral_review_repair_failed",
             analysisId,
             reason: error instanceof Error ? error.message : "unknown",
           }),
