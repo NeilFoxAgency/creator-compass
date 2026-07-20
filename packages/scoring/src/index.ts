@@ -6,430 +6,677 @@ import type {
 } from "@creator-compass/contracts";
 import { creatorTerritories, type CreatorTerritory } from "@creator-compass/taxonomy";
 
-export const METHODOLOGY_VERSION = "2026.07.2";
+export const METHODOLOGY_VERSION = "2026.07.3";
 
 const statusScore = { strong: 90, mixed: 62, weak: 32, unknown: 50 } as const;
-const evidenceText = (profile: BrandProfile) =>
-  profile.evidence.map((item) => item.excerpt.toLowerCase()).join(" ");
-const evidenceIdsFor = (profile: BrandProfile, terms: string[]) =>
-  profile.evidence
-    .filter((item) => terms.some((term) => item.excerpt.toLowerCase().includes(term.toLowerCase())))
-    .slice(0, 3)
-    .map((item) => item.id);
-
-function bestEvidence(profile: BrandProfile, terms: string[]) {
-  const normalized = terms
-    .flatMap((term) => term.toLowerCase().split(/[^a-z0-9]+/))
-    .filter((term) => term.length > 3);
-  return (
-    [...profile.evidence]
-      .map((item, index) => ({
-        item,
-        index,
-        score: normalized.filter((term) => item.excerpt.toLowerCase().includes(term)).length,
-      }))
-      .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.item.id ?? "evidence-1"
-  );
-}
-
-type ReadinessSpec = {
-  key: string;
-  label: string;
-  status: (profile: BrandProfile) => keyof typeof statusScore;
-  rationale: (profile: BrandProfile) => string;
-  improvement: string;
-  evidenceTerms: (profile: BrandProfile) => string[];
-};
-
-const readinessSpecs: ReadinessSpec[] = [
-  {
-    key: "audience-clarity",
-    label: "Audience clarity",
-    status: (p) =>
-      p.targetCustomers.length >= 2 ? "strong" : p.targetCustomers.length ? "mixed" : "unknown",
-    rationale: (p) =>
-      p.targetCustomers.length
-        ? `The public site points to ${p.targetCustomers.join(" and ")}.`
-        : "The reviewed pages do not define a specific customer clearly.",
-    improvement: "Name the primary buyer and the moment that triggers purchase.",
-    evidenceTerms: (p) => p.targetCustomers,
-  },
-  {
-    key: "demonstrability",
-    label: "Product demonstrability",
-    status: (p) => p.demonstrability,
-    rationale: (p) => `The offer appears ${p.demonstrability} to show inside creator content.`,
-    improvement:
-      "Prepare a short, visual product demonstration that shows the before-and-after moment.",
-    evidenceTerms: () => ["demo", "how it works", "before", "after", "tutorial"],
-  },
-  {
-    key: "content-naturalness",
-    label: "Naturalness in creator content",
-    status: (p) =>
-      p.demonstrability === "strong" ? "strong" : p.demonstrability === "weak" ? "weak" : "mixed",
-    rationale: (p) =>
-      `${p.products[0]?.name ?? "The offer"} can be connected to ${p.customerNeeds[0] ?? "a customer need"}, with some creative framing.`,
-    improvement:
-      "Document three real situations where the product naturally enters a customer's day.",
-    evidenceTerms: (p) => [...p.customerNeeds, ...p.products.map((item) => item.name)],
-  },
-  {
-    key: "trust-education",
-    label: "Trust or education requirement",
-    status: (p) =>
-      p.trustRequirement === "low"
-        ? "strong"
-        : p.trustRequirement === "medium"
-          ? "mixed"
-          : p.trustRequirement === "high"
-            ? "weak"
-            : "unknown",
-    rationale: (p) => `The purchase appears to require ${p.trustRequirement} trust or education.`,
-    improvement:
-      "Give creators substantiated proof points and plain-language answers to likely objections.",
-    evidenceTerms: () => ["learn", "guide", "proof", "research", "expert", "certified"],
-  },
-  {
-    key: "purchase-friction",
-    label: "Purchase friction",
-    status: (p) =>
-      p.purchaseFriction === "low"
-        ? "strong"
-        : p.purchaseFriction === "medium"
-          ? "mixed"
-          : p.purchaseFriction === "high"
-            ? "weak"
-            : "unknown",
-    rationale: (p) => `The observed purchase path appears to have ${p.purchaseFriction} friction.`,
-    improvement:
-      "Shorten the path from creator content to a clear offer and mobile-ready landing page.",
-    evidenceTerms: () => ["buy", "cart", "price", "book", "quote", "contact"],
-  },
-  {
-    key: "repeat-purchase",
-    label: "Repeat purchase or lifetime value",
-    status: (p) =>
-      p.repeatPurchasePotential === "high"
-        ? "strong"
-        : p.repeatPurchasePotential === "medium"
-          ? "mixed"
-          : p.repeatPurchasePotential === "low"
-            ? "weak"
-            : "unknown",
-    rationale: (p) =>
-      `Repeat-purchase potential appears ${p.repeatPurchasePotential} based on the offer type.`,
-    improvement:
-      "Define the repeat-use, replenishment, or referral behavior that can justify acquisition cost.",
-    evidenceTerms: () => ["subscription", "refill", "membership", "monthly", "renew"],
-  },
-  {
-    key: "offer-readiness",
-    label: "Offer readiness",
-    status: (p) =>
-      p.products.length && p.pricePositioning !== "unknown"
-        ? "strong"
-        : p.products.length
-          ? "mixed"
-          : "unknown",
-    rationale: (p) =>
-      p.products.length
-        ? `The site presents ${p.products.length} identifiable offer${p.products.length === 1 ? "" : "s"}.`
-        : "A concrete offer was not identifiable.",
-    improvement: "Create a campaign-specific offer with a clear benefit, terms, and expiration.",
-    evidenceTerms: (p) => p.products.flatMap((item) => [item.name, item.category]),
-  },
-  {
-    key: "tracking-readiness",
-    label: "Tracking readiness",
-    status: (p) =>
-      /\b(utm|attribution|tracking|discount code|affiliate link|conversion reporting)\b/.test(
-        evidenceText(p),
-      )
-        ? "mixed"
-        : "unknown",
-    rationale: (p) =>
-      /\b(utm|attribution|tracking|discount code|affiliate link|conversion reporting)\b/.test(
-        evidenceText(p),
-      )
-        ? "The reviewed evidence mentions a tracking mechanism, but implementation still requires verification."
-        : "Public pages do not establish attribution, links, or conversion tracking.",
-    improvement: "Prepare unique links, codes, and a lightweight campaign reporting sheet.",
-    evidenceTerms: () => [
-      "utm",
-      "attribution",
-      "tracking",
-      "discount code",
-      "affiliate link",
-      "conversion reporting",
-    ],
-  },
-  {
-    key: "sample-fulfillment",
-    label: "Sample and fulfillment readiness",
-    status: (p) =>
-      /\b(sample inventory|creator samples|fulfillment|ships to|shipping markets|in stock)\b/.test(
-        evidenceText(p),
-      )
-        ? "mixed"
-        : "unknown",
-    rationale: (p) =>
-      /\b(sample inventory|creator samples|fulfillment|ships to|shipping markets|in stock)\b/.test(
-        evidenceText(p),
-      )
-        ? "The site provides some fulfillment evidence, but creator sampling capacity still requires confirmation."
-        : "Public pages do not establish creator sampling inventory or fulfillment operations.",
-    improvement:
-      "Define sample inventory, shipping markets, owner, and delivery timeline before outreach.",
-    evidenceTerms: () => [
-      "sample inventory",
-      "creator samples",
-      "fulfillment",
-      "ships to",
-      "shipping markets",
-      "in stock",
-    ],
-  },
-  {
-    key: "claims-safety",
-    label: "Claims, regulatory, and brand-safety risk",
-    status: (p) =>
-      p.riskTags.length
-        ? "mixed"
-        : /\b(approved claims|disclosure guidelines|substantiated claims|legal review)\b/.test(
-              evidenceText(p),
-            )
-          ? "strong"
-          : "unknown",
-    rationale: (p) =>
-      p.riskTags.length
-        ? `Review is needed for ${p.riskTags.join(", ")}.`
-        : "No risk keyword is not proof of claims safety; approved language and disclosure controls were not established.",
-    improvement:
-      "Prepare approved claims, prohibited language, disclosure rules, and escalation contacts.",
-    evidenceTerms: (p) => [
-      ...p.riskTags,
-      "approved claims",
-      "disclosure guidelines",
-      "substantiated claims",
-      "legal review",
-    ],
-  },
-];
-
-export function scoreReadiness(profile: BrandProfile): ReadinessDimension[] {
-  return readinessSpecs.map((spec) => {
-    const status = spec.status(profile);
-    return {
-      key: spec.key,
-      label: spec.label,
-      status,
-      score: status === "unknown" ? null : statusScore[status],
-      rationale: spec.rationale(profile),
-      evidenceIds: evidenceIdsFor(profile, spec.evidenceTerms(profile)),
-      improvement: spec.improvement,
-      confidence:
-        profile.evidence.length >= 4 ? "high" : profile.evidence.length >= 2 ? "medium" : "low",
-    };
-  });
-}
-
-const tokens = (profile: BrandProfile) =>
-  new Set(
-    [
-      profile.summary,
-      ...profile.targetCustomers,
-      ...profile.customerNeeds,
-      ...profile.differentiators,
-      ...profile.products.flatMap((p) => [p.name, p.category]),
-    ]
-      .join(" ")
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((word) => word.length > 2),
-  );
-
 const genericMatchWords = new Set([
-  "practical",
-  "visual",
+  "ai",
+  "business",
+  "capability",
   "community",
   "confidence",
-  "choice",
+  "digital",
+  "growth",
   "people",
-  "clear",
-  "value",
-  "support",
+  "platform",
+  "practical",
   "product",
+  "self",
   "service",
+  "support",
+  "technology",
+  "tool",
+  "tools",
+  "value",
+  "visual",
 ]);
-const territorySignals: Record<string, string[]> = {
-  "marketing-education": ["marketing", "email", "campaign", "automation", "sms"],
-  "consumer-technology": [
-    "technology",
-    "software",
-    "browser",
-    "privacy",
-    "internet",
-    "open source",
-  ],
-  "beauty-tutorials": ["beauty", "makeup", "lip", "balm"],
-  "home-improvement": ["hvac", "heating", "cooling", "contractor", "installation", "residential"],
-  "wellness-routines": ["wellness", "supplement", "energy", "self care"],
-  "skincare-education": ["skincare", "skin", "sensitive skin", "ingredient"],
-  education: ["education", "course", "learning", "student"],
-  "career-development": ["career", "professional", "course", "job"],
-  "miniature-painting": ["miniature", "painting supplies", "tabletop terrain"],
-  gaming: ["gaming", "game", "tabletop"],
-  "outdoor-recreation": ["outdoor", "camping", "hiking", "trail"],
-  "sustainable-living": ["sustainable", "recycled", "reusable", "lower impact"],
-  "pet-care": ["pet", "dog", "cat", "animal"],
-  "productivity-systems": ["productivity", "planning", "focus", "priorities"],
-  "cooking-and-meal-preparation": ["meal", "cooking", "recipe", "food"],
-};
 
-export function scoreTerritory(profile: BrandProfile, territory: CreatorTerritory): number {
-  const brandTokens = tokens(profile);
-  const brandText = [
+const normalize = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const meaningfulTokens = (value: string) =>
+  normalize(value)
+    .split(" ")
+    .filter((word) => word.length > 2 && !genericMatchWords.has(word));
+
+function phraseMatch(left: string, right: string) {
+  const a = normalize(left);
+  const b = normalize(right);
+  if (!a || !b) return 0;
+  if (a === b) return 100;
+  const aTokens = meaningfulTokens(a);
+  const bTokens = meaningfulTokens(b);
+  if (!aTokens.length || !bTokens.length) return 0;
+  const aPhrase = ` ${a} `;
+  const bPhrase = ` ${b} `;
+  if (
+    (aPhrase.includes(` ${b} `) || bPhrase.includes(` ${a} `)) &&
+    Math.min(aTokens.length, bTokens.length) >= 1
+  )
+    return Math.min(aTokens.length, bTokens.length) >= 2 ? 92 : 68;
+  const intersection = aTokens.filter((token) => bTokens.includes(token));
+  if (!intersection.length) return 0;
+  const coverage = intersection.length / Math.min(aTokens.length, bTokens.length);
+  if (intersection.length === 1 && Math.max(aTokens.length, bTokens.length) > 2)
+    return coverage >= 0.5 ? 42 : 0;
+  return Math.round(coverage * 82);
+}
+
+function maxFacetMatch(left: string[], right: string[]) {
+  let best = 0;
+  for (const a of left) for (const b of right) best = Math.max(best, phraseMatch(a, b));
+  return best;
+}
+
+const evidenceText = (profile: BrandProfile) =>
+  profile.evidence.map((item) => item.excerpt.toLowerCase()).join(" ");
+
+const profileText = (profile: BrandProfile) =>
+  [
     profile.summary,
     ...profile.products.flatMap((item) => [item.name, item.category]),
     ...profile.targetCustomers,
     ...profile.customerNeeds,
-  ]
-    .join(" ")
-    .toLowerCase();
-  const territoryWords = territory.name
-    .toLowerCase()
-    .split(" ")
-    .filter((word) => word.length > 3);
-  const nameMatches = territoryWords.filter((word) => brandTokens.has(word)).length;
-  const signalMatches = (territorySignals[territory.id] ?? []).filter((signal) =>
-    brandText.includes(signal),
-  ).length;
-  const overlap = territory.keywords.filter((keyword) =>
-    keyword
-      .split(" ")
-      .some((word) => word.length > 3 && !genericMatchWords.has(word) && brandTokens.has(word)),
-  ).length;
-  const customerOverlap = Math.min(100, 18 + nameMatches * 28 + signalMatches * 22 + overlap * 7);
-  const naturalness =
-    profile.demonstrability === "strong" ? 88 : profile.demonstrability === "mixed" ? 68 : 44;
-  const demonstrability = statusScore[profile.demonstrability];
-  const purchasePath =
-    profile.purchaseFriction === "low" ? 88 : profile.purchaseFriction === "medium" ? 66 : 42;
-  const trustFit =
-    profile.trustRequirement === "high" && territory.funnelStrengths.includes("consideration")
-      ? 82
-      : 64;
-  const offerCompatibility = profile.products.length ? 76 : 38;
-  const operations = profile.riskTags.some((tag) => territory.riskTags.includes(tag)) ? 38 : 72;
-  const insufficientEvidencePenalty = profile.evidence.length < 2 ? 10 : 0;
-  const regulatoryPenalty =
-    profile.riskTags.some((tag) => /medical|financial|regulated|claims/.test(tag)) &&
-    territory.riskTags.some((tag) => /claims|regulatory/.test(tag))
-      ? 8
-      : 0;
-  return Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        customerOverlap * 0.25 +
-          naturalness * 0.2 +
-          demonstrability * 0.15 +
-          purchasePath * 0.1 +
-          trustFit * 0.1 +
-          offerCompatibility * 0.1 +
-          operations * 0.1 -
-          insufficientEvidencePenalty -
-          regulatoryPenalty,
+    ...profile.differentiators,
+    ...(profile.buyerRoles ?? []),
+    ...(profile.userRoles ?? []),
+    ...(profile.industries ?? []),
+    ...(profile.useCases ?? []),
+    ...(profile.jobsToBeDone ?? []),
+  ].join(" ");
+
+const inferredAudienceType = (profile: BrandProfile) => {
+  if (profile.audienceType && profile.audienceType !== "unknown") return profile.audienceType;
+  return /\b(b2b|saas|agency|marketers?|developers?|business|founders?|teams?|professionals?)\b/i.test(
+    profileText(profile),
+  )
+    ? "b2b"
+    : "b2c";
+};
+
+const inferredProductType = (profile: BrandProfile) => {
+  if (profile.productType && profile.productType !== "unknown") return profile.productType;
+  const text = profileText(profile);
+  if (/\b(saas|software|platform|api|app|mcp|developer tool|open source)\b/i.test(text))
+    return "software";
+  if (/\b(service|agency|consulting|installation|contractor)\b/i.test(text)) return "service";
+  return "physical-product";
+};
+
+function relevantEvidenceIds(profile: BrandProfile, terms: string[], limit = 3) {
+  const ranked = profile.evidence
+    .map((item, index) => ({
+      id: item.id,
+      index,
+      score: terms.reduce(
+        (score, term) => score + (phraseMatch(item.excerpt, term) >= 42 ? 1 : 0),
+        0,
       ),
-    ),
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .filter((item) => item.score > 0)
+    .slice(0, limit)
+    .map((item) => item.id);
+  return ranked.length ? ranked : profile.evidence.slice(0, 1).map((item) => item.id);
+}
+
+export type TerritoryScoreBreakdown = {
+  categoryUseCaseMatch: number;
+  buyerRoleOverlap: number;
+  jobsToBeDoneOverlap: number;
+  contentFormatNaturalness: number;
+  purchaseInfluenceIntent: number;
+  evidenceStrength: number;
+  incompatibilityPenalty: number;
+};
+
+export type TerritoryScoreResult = {
+  territory: CreatorTerritory;
+  /** @deprecated Use territoryFitScore. */
+  score: number;
+  territoryFitScore: number;
+  evidenceConfidence: "high" | "medium" | "low";
+  eligible: boolean;
+  eligibilityReasons: string[];
+  scoreComponents: TerritoryScoreBreakdown;
+};
+
+function scoreTerritoryDetailed(
+  profile: BrandProfile,
+  territory: CreatorTerritory,
+): TerritoryScoreResult {
+  const categories = [
+    ...profile.products.flatMap((item) => [item.name, item.category]),
+    ...(profile.industries ?? []),
+    ...(profile.useCases ?? []),
+  ];
+  const categoryTargets = [
+    territory.name,
+    ...territory.categorySignals,
+    ...territory.industries,
+    ...territory.useCases,
+  ];
+  const categoryUseCaseMatch = maxFacetMatch(categories, categoryTargets);
+  const buyerRoleOverlap = maxFacetMatch(
+    [...profile.targetCustomers, ...(profile.buyerRoles ?? []), ...(profile.userRoles ?? [])],
+    [...territory.buyerRoles, ...territory.userRoles],
   );
+  const jobsToBeDoneOverlap = maxFacetMatch(
+    [
+      ...profile.customerNeeds,
+      ...(profile.jobsToBeDone ?? []),
+      ...(profile.buyerGoalVerbPhrases ?? []),
+    ],
+    territory.jobsToBeDone,
+  );
+  const directMatch = Math.max(categoryUseCaseMatch, buyerRoleOverlap, jobsToBeDoneOverlap);
+  const audienceType = inferredAudienceType(profile);
+  const productType = inferredProductType(profile);
+  const b2bLifestyleMismatch =
+    audienceType === "b2b" &&
+    productType === "software" &&
+    territory.audienceType === "b2c" &&
+    territory.exclusionTags.includes("b2b-software-without-specific-bridge") &&
+    directMatch < 72;
+  const broadConsumerTechMismatch =
+    audienceType === "b2b" &&
+    productType === "software" &&
+    ["consumer-technology", "ai-industry-news"].includes(territory.id) &&
+    ![...(profile.useCases ?? []), ...(profile.buyerRoles ?? [])].some((item) =>
+      /\b(consumer device|gadget|personal technology buyer|ai news)\b/i.test(item),
+    );
+  const productMismatch =
+    !territory.compatibleProductTypes.includes(productType) &&
+    productType !== "mixed" &&
+    directMatch < 72;
+  const incompatibilityPenalty =
+    b2bLifestyleMismatch || broadConsumerTechMismatch ? 90 : productMismatch ? 35 : 0;
+  const eligible = directMatch >= 46 && incompatibilityPenalty === 0;
+  const contentFormatNaturalness = !eligible
+    ? 0
+    : profile.demonstrability === "strong"
+      ? 90
+      : profile.demonstrability === "mixed"
+        ? 70
+        : profile.demonstrability === "weak"
+          ? 38
+          : 52;
+  const purchaseInfluenceIntent = !eligible
+    ? 0
+    : territory.purchaseIntent === "high"
+      ? 92
+      : territory.purchaseIntent === "medium"
+        ? 65
+        : 30;
+  const matchedTerms = [
+    ...categories,
+    ...(profile.buyerRoles ?? []),
+    ...(profile.jobsToBeDone ?? []),
+  ].filter((term) => categoryTargets.some((target) => phraseMatch(term, target) >= 42));
+  const matchingEvidence = profile.evidence.filter((item) =>
+    matchedTerms.some((term) => phraseMatch(item.excerpt, term) >= 42),
+  ).length;
+  const evidenceStrength = !eligible
+    ? 0
+    : matchingEvidence >= 3
+      ? 92
+      : matchingEvidence >= 1
+        ? 68
+        : 38;
+  const weighted =
+    categoryUseCaseMatch * 0.38 +
+    buyerRoleOverlap * 0.23 +
+    jobsToBeDoneOverlap * 0.17 +
+    contentFormatNaturalness * 0.1 +
+    purchaseInfluenceIntent * 0.07 +
+    evidenceStrength * 0.05 -
+    incompatibilityPenalty;
+  const territoryFitScore = eligible
+    ? Math.max(0, Math.min(100, Math.round(weighted)))
+    : Math.max(0, Math.min(18, Math.round(directMatch * 0.18)));
+  const evidenceConfidence =
+    matchingEvidence >= 3 ? "high" : matchingEvidence >= 1 ? "medium" : "low";
+  const eligibilityReasons = [
+    categoryUseCaseMatch >= 46 ? "category or use-case match" : "",
+    buyerRoleOverlap >= 46 ? "buyer-role overlap" : "",
+    jobsToBeDoneOverlap >= 46 ? "job-to-be-done overlap" : "",
+    b2bLifestyleMismatch ? "B2B software and consumer-lifestyle mismatch" : "",
+    broadConsumerTechMismatch ? "broad attention audience without evidenced buyer intent" : "",
+    productMismatch ? "product-type mismatch" : "",
+  ].filter(Boolean);
+  return {
+    territory,
+    score: territoryFitScore,
+    territoryFitScore,
+    evidenceConfidence,
+    eligible,
+    eligibilityReasons,
+    scoreComponents: {
+      categoryUseCaseMatch,
+      buyerRoleOverlap,
+      jobsToBeDoneOverlap,
+      contentFormatNaturalness,
+      purchaseInfluenceIntent,
+      evidenceStrength,
+      incompatibilityPenalty,
+    },
+  };
+}
+
+export function scoreTerritory(profile: BrandProfile, territory: CreatorTerritory) {
+  return scoreTerritoryDetailed(profile, territory).territoryFitScore;
 }
 
 export function rankTerritories(profile: BrandProfile) {
   return creatorTerritories
-    .map((territory) => ({ territory, score: scoreTerritory(profile, territory) }))
-    .sort((a, b) => b.score - a.score || a.territory.name.localeCompare(b.territory.name));
+    .map((territory) => scoreTerritoryDetailed(profile, territory))
+    .sort(
+      (a, b) =>
+        Number(b.eligible) - Number(a.eligible) ||
+        b.territoryFitScore - a.territoryFitScore ||
+        a.territory.name.localeCompare(b.territory.name),
+    );
+}
+
+function fitLabel(score: number, classification: TerritoryRecommendation["classification"]) {
+  if (classification === "risk") return "not-recommended" as const;
+  if (score >= 70) return "strong-fit" as const;
+  if (score >= 50) return "promising-fit" as const;
+  return "exploratory" as const;
+}
+
+function safeGoal(profile: BrandProfile, territory: CreatorTerritory) {
+  const candidates = [
+    ...(profile.buyerGoalVerbPhrases ?? []),
+    ...(profile.jobsToBeDone ?? []),
+    ...profile.customerNeeds,
+  ];
+  const verb =
+    /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid)\b/i;
+  const matched = candidates.find(
+    (item) =>
+      verb.test(item.trim()) && territory.jobsToBeDone.some((job) => phraseMatch(item, job) >= 42),
+  );
+  const anyVerb = candidates.find((item) => verb.test(item.trim()));
+  const noun = candidates.find((item) => item.trim().length > 2);
+  return (
+    matched?.trim() ??
+    anyVerb?.trim() ??
+    (noun ? `evaluate ${noun.trim()}` : (territory.jobsToBeDone[0] ?? "evaluate the offer"))
+  );
+}
+
+function matchedUseCase(profile: BrandProfile, territory: CreatorTerritory) {
+  const candidates = [
+    ...(profile.useCases ?? []),
+    ...profile.products.map((item) => item.category),
+  ];
+  return (
+    candidates
+      .map((value) => ({
+        value,
+        score: maxFacetMatch([value], [...territory.useCases, ...territory.categorySignals]),
+      }))
+      .sort((a, b) => b.score - a.score)[0]?.value ??
+    territory.useCases[0] ??
+    territory.name.toLowerCase()
+  );
 }
 
 function recommendation(
   profile: BrandProfile,
-  territory: CreatorTerritory,
-  score: number,
+  scored: TerritoryScoreResult,
   classification: TerritoryRecommendation["classification"],
 ): TerritoryRecommendation {
-  const need =
-    profile.customerNeeds[0] ?? territory.audienceMotivations[0] ?? "make a confident choice";
+  const { territory, territoryFitScore, scoreComponents, evidenceConfidence } = scored;
   const product = profile.products[0]?.name ?? profile.brandName;
+  const goal = safeGoal(profile, territory);
+  const useCase = matchedUseCase(profile, territory);
   const format = territory.commonContentFormats[0] ?? "practical demonstration";
-  const supportingFormat = territory.commonContentFormats[1] ?? "practical comparison";
-  const motivation = territory.audienceMotivations[0] ?? need;
+  const secondFormat = territory.commonContentFormats[1] ?? "comparison";
+  const evidenceIds = relevantEvidenceIds(profile, [
+    territory.name,
+    useCase,
+    goal,
+    ...territory.categorySignals,
+  ]);
+  const risk = classification === "risk";
   return {
     territoryId: territory.id,
     name: territory.name,
     classification,
-    score,
-    rationale:
-      classification === "risk"
-        ? `This direction may look attractive, but the available evidence does not yet show a natural, low-risk connection.`
-        : `${territory.name} connects ${profile.brandName} to an audience motivated by ${territory.audienceMotivations.slice(0, 2).join(" and ")}.`,
-    audienceConnection: `The audience is already trying to ${need}, which creates a credible role for ${product}.`,
-    customerNeed: need,
+    score: territoryFitScore,
+    territoryFitScore,
+    fitLabel: fitLabel(territoryFitScore, classification),
+    evidenceConfidence,
+    scoreComponents,
+    ...(classification === "risk" && "riskCandidateScore" in scored
+      ? { riskCandidateScore: Number(scored.riskCandidateScore) }
+      : {}),
+    rationale: risk
+      ? `${territory.name} has a tempting surface connection, but the available evidence does not show sufficient buyer intent or a defensible use-case bridge.`
+      : `${territory.name} is supported by ${scored.eligibilityReasons.filter((reason) => !reason.includes("mismatch")).join(" and ")}.`,
+    audienceConnection: risk
+      ? `The topic may attract attention, but its audience is not clearly trying to ${goal}.`
+      : `This audience includes people who need to ${goal}, giving ${product} a specific role through ${useCase}.`,
+    customerNeed: goal,
     contentStyles: territory.commonContentFormats.slice(0, 3),
-    creatorProfile: `A trusted ${territory.name.toLowerCase()} educator who uses specific examples and explains tradeoffs.`,
-    creatorSizeBand: score >= 75 ? "micro" : score >= 62 ? "small" : "nano",
+    creatorProfile: `A ${territory.name.toLowerCase()} practitioner who can demonstrate ${useCase}, explain tradeoffs, and speak to ${territory.buyerRoles.slice(0, 2).join(" or ")}.`,
+    creatorSizeBand: territoryFitScore >= 80 ? "micro" : territoryFitScore >= 60 ? "small" : "nano",
     sponsorshipFormats: [format, "integrated demonstration"],
     campaignConcepts: [
       {
-        title: `${product}: ${format}`,
-        concept: `Create ${format} content showing how ${product} supports ${need} for ${territory.name.toLowerCase()} viewers motivated by ${motivation}; include one limitation.`,
-        openingHook: `“For ${territory.name.toLowerCase()} viewers looking for ${need}, here is the tradeoff I would check first.”`,
+        title: `${useCase}: working walkthrough`,
+        concept: `Have a creator use ${product} to ${goal} in a concrete ${useCase} workflow, showing inputs, decisions, output, and one limitation.`,
+        openingHook: `Here is how I use ${product} to ${goal}—and where it does not replace judgment.`,
       },
       {
-        title: `${territory.name} tradeoff test`,
-        concept: `Have a creator test ${product} against the audience's current approach using ${supportingFormat} and three criteria specific to ${territory.name.toLowerCase()}.`,
-        openingHook: `“Does ${product} actually help with ${motivation}? I tested the part most reviews skip.”`,
+        title: `${product}: ${secondFormat}`,
+        concept: `Compare ${product} with the audience's current way of handling ${useCase}, using criteria drawn from the documented buyer problem rather than a generic feature list.`,
+        openingHook: `If you need to ${goal}, these are the tradeoffs I would check before choosing a route.`,
       },
     ],
-    viewerObjection: `Viewers may question whether ${product} is genuinely useful or merely a sponsored interruption.`,
-    keyRisk:
-      territory.riskTags[0] ??
-      "The creative connection could feel forced without specific evidence.",
+    viewerObjection: risk
+      ? "Viewers may recognize the topic overlap but have little reason to adopt or influence purchase of this offer."
+      : `Viewers may question whether ${product} materially improves ${useCase} or merely adds another tool.`,
+    keyRisk: risk
+      ? `Attention may not translate into qualified adoption because ${territory.name.toLowerCase()} is not an evidenced buyer community.`
+      : (territory.riskTags[0] ?? "The connection must stay grounded in demonstrated use."),
     searchQueries: territory.searchTemplates.slice(0, 3),
-    evidenceIds: [bestEvidence(profile, [territory.name, product, need, ...territory.keywords])],
-    confidence:
-      score >= 75 && profile.evidence.length >= 3 ? "high" : score >= 58 ? "medium" : "low",
+    evidenceIds,
+    confidence: evidenceConfidence,
   };
 }
 
+export function rankRiskCandidates(profile: BrandProfile) {
+  const text = normalize(profileText(profile));
+  const audienceType = inferredAudienceType(profile);
+  const productType = inferredProductType(profile);
+  return creatorTerritories
+    .map((territory) => {
+      const detailed = scoreTerritoryDetailed(profile, territory);
+      const superficialMatches = territory.superficialMatchRisks.filter((term) => {
+        const normalized = normalize(term);
+        return meaningfulTokens(normalized).length > 0 && phraseMatch(text, normalized) >= 42;
+      }).length;
+      const strategicMismatch =
+        (audienceType === "b2b" && territory.audienceType === "b2c") ||
+        (productType === "software" && territory.purchaseIntent !== "high");
+      const namedB2bSoftwareRisk =
+        audienceType === "b2b" &&
+        productType === "software" &&
+        territory.id === "consumer-technology"
+          ? 82
+          : audienceType === "b2b" &&
+              productType === "software" &&
+              territory.id === "ai-industry-news" &&
+              /\b(ai|agent|mcp)\b/i.test(profileText(profile))
+            ? 76
+            : 0;
+      const riskCandidateScore = Math.max(
+        namedB2bSoftwareRisk,
+        superficialMatches > 0 && strategicMismatch
+          ? Math.min(100, superficialMatches * 24 + 36)
+          : 0,
+      );
+      return { ...detailed, riskCandidateScore };
+    })
+    .filter((item) => !item.eligible && item.riskCandidateScore >= 48)
+    .sort(
+      (a, b) =>
+        b.riskCandidateScore - a.riskCandidateScore ||
+        a.territory.name.localeCompare(b.territory.name),
+    );
+}
+
 export function buildCandidateSet(profile: BrandProfile, count = 12): TerritoryRecommendation[] {
-  const ranked = rankTerritories(profile);
-  const topCount = Math.max(5, count - 3);
-  const candidates = [...ranked.slice(0, topCount), ...ranked.slice(-3)];
-  return [...new Map(candidates.map((item) => [item.territory.id, item])).values()].map(
-    ({ territory, score }) => recommendation(profile, territory, score, "adjacent"),
-  );
+  const eligible = rankTerritories(profile)
+    .filter((item) => item.eligible && item.territoryFitScore >= 38)
+    .slice(0, Math.max(0, count - 2))
+    .map((item) => recommendation(profile, item, "adjacent"));
+  const risks = rankRiskCandidates(profile)
+    .slice(0, Math.min(2, count - eligible.length))
+    .map((item) => recommendation(profile, item, "risk"));
+  return [...eligible, ...risks];
 }
 
 export function selectPortfolio(profile: BrandProfile): TerritoryRecommendation[] {
-  const ranked = rankTerritories(profile);
-  const core = ranked
-    .slice(0, 3)
-    .map(({ territory, score }) => recommendation(profile, territory, score, "core"));
-  const adjacent = ranked
-    .slice(3, 5)
-    .map(({ territory, score }) => recommendation(profile, territory, score, "adjacent"));
-  const experimentalIndex = Math.min(Math.max(8, Math.floor(ranked.length / 3)), ranked.length - 3);
-  const experimentalPick = ranked[experimentalIndex];
-  const riskPicks = ranked.slice(-2).reverse();
-  if (!experimentalPick) throw new Error("Taxonomy is too small to select a portfolio.");
+  const ranked = rankTerritories(profile).filter((item) => item.eligible);
+  const coreScores = ranked.filter((item) => item.territoryFitScore >= 70).slice(0, 3);
+  const coreIds = new Set(coreScores.map((item) => item.territory.id));
+  const adjacentScores = ranked
+    .filter((item) => !coreIds.has(item.territory.id) && item.territoryFitScore >= 50)
+    .slice(0, 3);
+  const selectedIds = new Set([...coreScores, ...adjacentScores].map((item) => item.territory.id));
+  const experimentalScores = ranked
+    .filter(
+      (item) =>
+        !selectedIds.has(item.territory.id) &&
+        item.territoryFitScore >= 38 &&
+        item.territoryFitScore < 50,
+    )
+    .slice(0, 2);
+  const risks = rankRiskCandidates(profile).slice(0, 2);
   return [
-    ...core,
-    ...adjacent,
-    recommendation(profile, experimentalPick.territory, experimentalPick.score, "experimental"),
-    ...riskPicks.map(({ territory, score }) => recommendation(profile, territory, score, "risk")),
+    ...coreScores.map((item) => recommendation(profile, item, "core")),
+    ...adjacentScores.map((item) => recommendation(profile, item, "adjacent")),
+    ...experimentalScores.map((item) => recommendation(profile, item, "experimental")),
+    ...risks.map((item) => recommendation(profile, item, "risk")),
   ];
+}
+
+const campaignTrackingPattern =
+  /\b(utm(?: parameters?| links?)?|affiliate links?|referral codes?|discount codes?|campaign attribution|conversion events?|campaign reporting|creator campaign tracking)\b/i;
+
+function readinessDimension(
+  profile: BrandProfile,
+  key: string,
+  label: string,
+  status: ReadinessDimension["status"],
+  rationale: string,
+  improvement: string,
+  terms: string[],
+): ReadinessDimension {
+  return {
+    key,
+    label,
+    status,
+    score: status === "unknown" || status === "not-applicable" ? null : statusScore[status],
+    rationale,
+    evidenceIds:
+      status === "unknown" || status === "not-applicable"
+        ? []
+        : relevantEvidenceIds(profile, terms),
+    improvement,
+    confidence:
+      profile.evidence.length >= 4 ? "high" : profile.evidence.length >= 2 ? "medium" : "low",
+  };
+}
+
+export function scoreReadiness(profile: BrandProfile): ReadinessDimension[] {
+  const text = evidenceText(profile);
+  const productType = inferredProductType(profile);
+  const software = productType === "software" || productType === "digital-product";
+  const audienceStatus =
+    profile.targetCustomers.length >= 2
+      ? "strong"
+      : profile.targetCustomers.length
+        ? "mixed"
+        : "unknown";
+  const offerStatus =
+    profile.products.length && profile.pricePositioning !== "unknown"
+      ? "strong"
+      : profile.products.length
+        ? "mixed"
+        : "unknown";
+  const trackingStatus = campaignTrackingPattern.test(text) ? "mixed" : "unknown";
+  const claimsStatus =
+    /\b(approved claims|disclosure guidelines|substantiated claims|legal review)\b/i.test(text)
+      ? "strong"
+      : profile.riskTags.length
+        ? "mixed"
+        : "unknown";
+  const common: ReadinessDimension[] = [
+    readinessDimension(
+      profile,
+      "audience-clarity",
+      "Audience clarity",
+      audienceStatus,
+      audienceStatus === "unknown"
+        ? "The reviewed pages do not define a primary buyer."
+        : `The public site identifies ${profile.targetCustomers.join(", ")}.`,
+      "Name the primary buyer and the purchase trigger.",
+      profile.targetCustomers,
+    ),
+    readinessDimension(
+      profile,
+      "demonstrability",
+      "Product demonstrability",
+      profile.demonstrability,
+      `The offer appears ${profile.demonstrability} to demonstrate in creator content.`,
+      "Prepare a short, honest demonstration with a visible input and output.",
+      ["demo", "tutorial", "walkthrough", ...(profile.useCases ?? [])],
+    ),
+    readinessDimension(
+      profile,
+      "trust-education",
+      "Trust and education requirement",
+      profile.trustRequirement === "low"
+        ? "strong"
+        : profile.trustRequirement === "medium"
+          ? "mixed"
+          : profile.trustRequirement === "high"
+            ? "weak"
+            : "unknown",
+      `The purchase requires ${profile.trustRequirement} trust or education.`,
+      "Prepare substantiated proof and plain-language objection handling.",
+      ["proof", "documentation", "case study", "research"],
+    ),
+    readinessDimension(
+      profile,
+      "offer-readiness",
+      "Offer readiness",
+      offerStatus,
+      offerStatus === "unknown"
+        ? "A campaign-ready offer was not established."
+        : `The site presents ${profile.products.length} identifiable offer${profile.products.length === 1 ? "" : "s"}.`,
+      "Define the creator-specific offer, terms, and conversion action.",
+      profile.products.flatMap((item) => [item.name, item.category, item.priceText ?? ""]),
+    ),
+    readinessDimension(
+      profile,
+      "tracking-readiness",
+      "Campaign attribution readiness",
+      trackingStatus,
+      trackingStatus === "unknown"
+        ? "Rank tracking and product analytics do not establish creator-campaign attribution. No UTM, referral, affiliate, or conversion-event setup was evidenced."
+        : "The evidence mentions a campaign attribution mechanism, but implementation still needs verification.",
+      "Prepare UTM links or referral codes and define the conversion event and reporting owner.",
+      ["utm", "affiliate", "referral", "conversion event", "campaign attribution"],
+    ),
+    readinessDimension(
+      profile,
+      "claims-safety",
+      "Claims and brand-safety controls",
+      claimsStatus,
+      claimsStatus === "unknown"
+        ? "The absence of a risk keyword is not evidence of approved claims or disclosure controls."
+        : profile.riskTags.length
+          ? `Review is needed for ${profile.riskTags.join(", ")}.`
+          : "Approved claims or disclosure controls are described.",
+      "Document approved claims, prohibited language, disclosures, and escalation contacts.",
+      [...profile.riskTags, "approved claims", "disclosure"],
+    ),
+  ];
+  const softwareSpecific: ReadinessDimension[] = [
+    readinessDimension(
+      profile,
+      "demo-trial-readiness",
+      "Demo or trial readiness",
+      /\b(demo|trial|free plan|start free|sign up)\b/i.test(text) ? "mixed" : "unknown",
+      /\b(demo|trial|free plan|start free|sign up)\b/i.test(text)
+        ? "A demo or trial path is visible, but creator suitability requires verification."
+        : "No creator-ready demo or trial path was established.",
+      "Create a low-friction trial or guided demo for creators.",
+      ["demo", "trial", "start free", "sign up"],
+    ),
+    readinessDimension(
+      profile,
+      "creator-account-provisioning",
+      "Creator account provisioning",
+      /\b(creator account|partner account|sandbox account|test account)\b/i.test(text)
+        ? "mixed"
+        : "unknown",
+      "Public evidence does not establish creator account provisioning or permissions.",
+      "Define who creates, funds, and supports creator accounts.",
+      ["creator account", "partner account", "sandbox account"],
+    ),
+    readinessDimension(
+      profile,
+      "onboarding-documentation",
+      "Onboarding and documentation",
+      /\b(documentation|docs|getting started|setup guide)\b/i.test(text) ? "mixed" : "unknown",
+      /\b(documentation|docs|getting started|setup guide)\b/i.test(text)
+        ? "Setup or documentation is visible, but creator onboarding still requires a campaign path."
+        : "Creator-ready onboarding and documentation were not established.",
+      "Prepare a concise onboarding path tied to the campaign use case.",
+      ["documentation", "getting started", "setup guide"],
+    ),
+    readinessDimension(
+      profile,
+      "test-environment",
+      "Test environment readiness",
+      /\b(sandbox|test environment|demo workspace|sample project)\b/i.test(text)
+        ? "mixed"
+        : "unknown",
+      "A safe creator test environment was not established from public evidence.",
+      "Provide a sandbox, demo workspace, or reproducible sample project.",
+      ["sandbox", "test environment", "demo workspace"],
+    ),
+  ];
+  const physicalSpecific: ReadinessDimension[] = [
+    readinessDimension(
+      profile,
+      "sample-inventory",
+      "Sample inventory",
+      /\b(creator samples?|sample inventory)\b/i.test(text) ? "mixed" : "unknown",
+      "Creator sample inventory is not established from public evidence.",
+      "Reserve creator sample inventory and assign an owner.",
+      ["creator sample", "sample inventory"],
+    ),
+    readinessDimension(
+      profile,
+      "shipping-fulfillment",
+      "Shipping and fulfillment",
+      /\b(shipping|ships to|fulfillment|delivery)\b/i.test(text) ? "mixed" : "unknown",
+      "Shipping evidence is incomplete for a creator campaign.",
+      "Define shipping markets, timing, and fulfillment ownership.",
+      ["shipping", "ships to", "fulfillment"],
+    ),
+    readinessDimension(
+      profile,
+      "demonstration-units",
+      "Demonstration units",
+      /\b(demo unit|tester|sample)\b/i.test(text) ? "mixed" : "unknown",
+      "Demonstration-unit availability is not established.",
+      "Prepare complete, camera-ready demonstration units.",
+      ["demo unit", "tester", "sample"],
+    ),
+    readinessDimension(
+      profile,
+      "returns-logistics",
+      "Returns and logistics",
+      /\b(returns?|return policy|reverse logistics)\b/i.test(text) ? "mixed" : "unknown",
+      "Return and campaign logistics are not established.",
+      "Define returns, damaged-item handling, and campaign logistics.",
+      ["return policy", "returns", "logistics"],
+    ),
+  ];
+  return [...common, ...(software ? softwareSpecific : physicalSpecific)];
 }
 
 export function hasSufficientEvidence(profile: BrandProfile) {
@@ -443,13 +690,14 @@ export function hasSufficientEvidence(profile: BrandProfile) {
     /\b(wide range|all categories|everything for everyone|multi-category)\b/i.test(
       profile.summary,
     ) ||
-    (categoryCount >= 4 && (vagueAudience || !profile.customerNeeds.length));
+    (categoryCount >= 4 &&
+      (vagueAudience || !(profile.jobsToBeDone?.length ?? profile.customerNeeds.length)));
   return (
     profile.evidence.length >= 2 &&
     profile.summary.trim().length >= 40 &&
     profile.products.length > 0 &&
-    profile.targetCustomers.some((item) => item.trim().length >= 5) &&
-    profile.customerNeeds.some((item) => item.trim().length >= 5) &&
+    !vagueAudience &&
+    (profile.jobsToBeDone?.length ?? profile.customerNeeds.length) > 0 &&
     !broadMultiCategory
   );
 }
@@ -465,14 +713,12 @@ export function buildClarifyingQuestions(profile: BrandProfile) {
     !profile.targetCustomers.length ||
     profile.targetCustomers.some((item) => /people|everyone|consumer/i.test(item))
   )
-    questions.push(
-      "Who is the primary buyer, and what specific situation causes them to look for this offer?",
-    );
-  if (!profile.customerNeeds.length)
-    questions.push("What problem or desired outcome should creator content make concrete?");
-  questions.push("What price, offer, or call to action should a creator send viewers toward?");
+    questions.push("Who is the primary buyer, and what situation causes them to seek this offer?");
+  if (!(profile.jobsToBeDone?.length ?? profile.customerNeeds.length))
+    questions.push("What action is the buyer trying to complete or improve?");
+  questions.push("What offer, price, and conversion action should a creator send viewers toward?");
   questions.push(
-    "What proof points, approved claims, tracking setup, and fulfillment capacity are already available?",
+    "What proof, claim restrictions, attribution setup, and campaign assets are available?",
   );
   return [...new Set(questions)].slice(0, 5);
 }
@@ -485,21 +731,46 @@ export function assembleDeterministicReport(
   const readiness = scoreReadiness(profile);
   const knownScores = readiness.flatMap((item) => (item.score == null ? [] : [item.score]));
   const hasEnoughEvidence = hasSufficientEvidence(profile);
-  const rawScore =
+  const rawBrandReadiness =
     hasEnoughEvidence && knownScores.length
       ? Math.round(knownScores.reduce((a, b) => a + b, 0) / knownScores.length)
       : null;
   const criticalUnknowns = readiness.filter(
     (item) =>
-      ["tracking-readiness", "sample-fulfillment", "claims-safety"].includes(item.key) &&
-      item.status === "unknown",
+      [
+        "tracking-readiness",
+        "claims-safety",
+        inferredProductType(profile) === "software"
+          ? "demo-trial-readiness"
+          : "shipping-fulfillment",
+      ].includes(item.key) && item.status === "unknown",
   );
-  const summaryScore =
-    rawScore == null ? null : criticalUnknowns.length ? Math.min(rawScore, 59) : rawScore;
+  const brandReadiness =
+    rawBrandReadiness == null
+      ? null
+      : criticalUnknowns.length
+        ? Math.min(rawBrandReadiness, 59)
+        : rawBrandReadiness;
   const territories = selectPortfolio(profile);
-  const north = territories.find((item) => item.classification === "core") ?? territories[0];
-  if (!north) throw new Error("No territory could be selected.");
+  const north = territories.find((item) => item.classification === "core");
+  const canRecommend = hasEnoughEvidence && Boolean(north);
   const id = options.id ?? crypto.randomUUID();
+  const readinessSummary: CreatorCompassReport["readinessSummary"] = {
+    status:
+      !canRecommend || brandReadiness == null
+        ? "insufficient-evidence"
+        : brandReadiness >= 78
+          ? "ready"
+          : brandReadiness >= 62
+            ? "promising"
+            : brandReadiness >= 45
+              ? "prepare-first"
+              : "poor-fit",
+    score: canRecommend ? brandReadiness : null,
+    summary: !canRecommend
+      ? `There is not enough specific evidence or territory fit to give ${profile.brandName} a confident route or numerical readiness result.`
+      : `Brand readiness is separate from territory fit. ${profile.brandName} ${brandReadiness! >= 62 ? "can consider a bounded creator test" : "should close readiness gaps before broad outreach"}.`,
+  };
   return {
     id,
     slug: options.slug ?? `${profile.canonicalDomain.replace(/\./g, "-")}-${id.slice(0, 8)}`,
@@ -507,55 +778,42 @@ export function assembleDeterministicReport(
     expiresAt: new Date(now.getTime() + 30 * 86_400_000).toISOString(),
     brandProfile: profile,
     readiness,
-    readinessSummary: {
-      status:
-        summaryScore == null
-          ? "insufficient-evidence"
-          : summaryScore >= 78
-            ? "ready"
-            : summaryScore >= 62
-              ? "promising"
-              : summaryScore >= 45
-                ? "prepare-first"
-                : "poor-fit",
-      score: summaryScore,
-      summary:
-        summaryScore == null
-          ? `There is not enough specific evidence to give ${profile.brandName} a confident route or numerical readiness score. The directions below are preliminary hypotheses only.`
-          : `Based on the public pages reviewed, ${profile.brandName} ${summaryScore >= 62 ? "appears ready for a bounded creator test" : "should close a few readiness gaps before broad outreach"}.`,
-    },
-    recommendationState: hasEnoughEvidence ? "recommendation" : "preliminary-hypotheses",
-    clarifyingQuestions: hasEnoughEvidence ? [] : buildClarifyingQuestions(profile),
+    readinessSummary,
+    brandReadiness: readinessSummary,
+    recommendationState: canRecommend ? "recommendation" : "preliminary-hypotheses",
+    clarifyingQuestions: canRecommend ? [] : buildClarifyingQuestions(profile),
     territories,
-    northStar: hasEnoughEvidence
-      ? {
-          territoryId: north.territoryId,
-          format: north.sponsorshipFormats[0] ?? "integrated demonstration",
-          creatorDirection: `${north.creatorSizeBand} ${north.name.toLowerCase()} creators`,
-          testShape:
-            "Brief 5 creators, activate 2, use one concept and one measurable landing-page action, then review after 30 days.",
-          why: `${north.name} has the strongest combination of audience relevance, content naturalness, and evidence confidence in this analysis.`,
-          fixFirst: readiness
-            .filter((item) => item.status === "weak" || item.status === "unknown")
-            .slice(0, 3)
-            .map((item) => item.improvement),
-        }
-      : null,
-    nextSteps: hasEnoughEvidence
-      ? [
-          `Confirm the customer and product assumptions in the brand snapshot.`,
-          `Close the highest-priority readiness gap: ${readiness.find((item) => item.status !== "strong")?.improvement ?? "document campaign tracking"}`,
-          `Write a one-page brief for ${north.name}.`,
-          `Build a shortlist using: ${north.searchQueries[0] ?? north.name}.`,
-          "Run a small, measurable test before expanding the creator mix.",
-        ]
-      : [
-          "Paste a focused brand description using the questions below.",
-          "Choose one priority product or service and one primary buyer.",
-          "Add the intended offer, price, and conversion action.",
-          "Document available proof, claim restrictions, tracking, and fulfillment.",
-          "Generate a new report once the critical evidence is present.",
-        ],
+    northStar:
+      canRecommend && north
+        ? {
+            territoryId: north.territoryId,
+            format: north.sponsorshipFormats[0] ?? "integrated demonstration",
+            creatorDirection: `${north.creatorSizeBand} ${north.name.toLowerCase()} creators`,
+            testShape:
+              "Brief up to 5 creators, activate 1–2, use one evidenced concept and one defined conversion event, then review the result.",
+            why: `${north.name} clears the strong-fit threshold with ${(north.fitLabel ?? "strong-fit").replace("-", " ")} and ${north.evidenceConfidence ?? north.confidence} evidence confidence.`,
+            fixFirst: readiness
+              .filter((item) => item.status === "weak" || item.status === "unknown")
+              .slice(0, 3)
+              .map((item) => item.improvement),
+          }
+        : null,
+    nextSteps:
+      canRecommend && north
+        ? [
+            "Confirm the structured buyer, use-case, and product assumptions.",
+            `Close the highest-priority readiness gap: ${readiness.find((item) => item.status === "weak" || item.status === "unknown")?.improvement ?? "document campaign attribution"}`,
+            `Write a one-page brief for ${north.name}.`,
+            `Build a shortlist using: ${north.searchQueries[0] ?? north.name}.`,
+            "Run a small, measurable test before expanding the creator mix.",
+          ]
+        : [
+            "Paste a focused brand description using the questions below.",
+            "Choose one priority product and one primary buyer role.",
+            "Describe the job the buyer is trying to complete.",
+            "Add the offer, proof, attribution, and campaign assets available.",
+            "Generate a new report when the critical evidence is present.",
+          ],
     assumptions: [
       ...profile.unknowns,
       "Creator availability, pricing, audience quality, and willingness to partner require direct verification.",
@@ -564,8 +822,15 @@ export function assembleDeterministicReport(
     aiReview: {
       usedGpt56: false,
       model: "deterministic",
-      promptVersion: "review-v1",
+      promptVersion: "review-v2",
       qualityFlag: "deterministic-fallback",
+    },
+    deliveryQuality: {
+      state: "draft-analysis",
+      enrichmentSuccessRate: 0,
+      finalReviewCompleted: false,
+      grammarChecksPassed: true,
+      reasons: ["Candidate copy and strategic review used the deterministic safety path."],
     },
   };
 }

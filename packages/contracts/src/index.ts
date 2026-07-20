@@ -1,8 +1,62 @@
 import { z } from "zod";
 
 export const confidenceSchema = z.enum(["high", "medium", "low"]);
-export const readinessStatusSchema = z.enum(["strong", "mixed", "weak", "unknown"]);
+export const readinessStatusSchema = z.enum([
+  "strong",
+  "mixed",
+  "weak",
+  "unknown",
+  "not-applicable",
+]);
 export const territoryClassSchema = z.enum(["core", "adjacent", "experimental", "risk"]);
+export const audienceTypeSchema = z.enum(["b2b", "b2c", "mixed", "unknown"]);
+export const businessModelSchema = z.enum([
+  "saas",
+  "open-source",
+  "e-commerce",
+  "marketplace",
+  "service",
+  "subscription",
+  "media",
+  "nonprofit",
+  "mixed",
+  "unknown",
+]);
+export const productTypeSchema = z.enum([
+  "software",
+  "digital-product",
+  "physical-product",
+  "service",
+  "marketplace",
+  "content",
+  "mixed",
+  "unknown",
+]);
+export const technicalLevelSchema = z.enum([
+  "non-technical",
+  "mixed",
+  "technical",
+  "developer",
+  "unknown",
+]);
+export const purchaseMotionSchema = z.enum([
+  "self-serve",
+  "sales-led",
+  "product-led",
+  "retail",
+  "consultative",
+  "mixed",
+  "unknown",
+]);
+export const campaignAssetTypeSchema = z.enum([
+  "software-access",
+  "demo-environment",
+  "physical-sample",
+  "service-experience",
+  "digital-access",
+  "mixed",
+  "unknown",
+]);
 
 export const evidenceRefSchema = z.object({
   id: z.string().min(1),
@@ -24,6 +78,19 @@ export const brandProfileSchema = z.object({
   ),
   targetCustomers: z.array(z.string()),
   customerNeeds: z.array(z.string()),
+  businessModel: businessModelSchema.optional(),
+  productType: productTypeSchema.optional(),
+  audienceType: audienceTypeSchema.optional(),
+  buyerRoles: z.array(z.string()).optional(),
+  userRoles: z.array(z.string()).optional(),
+  industries: z.array(z.string()).optional(),
+  useCases: z.array(z.string()).optional(),
+  jobsToBeDone: z.array(z.string()).optional(),
+  buyerGoalVerbPhrases: z.array(z.string()).optional(),
+  problemStatements: z.array(z.string()).optional(),
+  technicalLevel: technicalLevelSchema.optional(),
+  purchaseMotion: purchaseMotionSchema.optional(),
+  campaignAssetType: campaignAssetTypeSchema.optional(),
   differentiators: z.array(z.string()),
   pricePositioning: z.enum(["budget", "mid-market", "premium", "luxury", "unknown"]),
   purchaseFriction: z.enum(["low", "medium", "high", "unknown"]),
@@ -51,6 +118,21 @@ export const territoryRecommendationSchema = z.object({
   name: z.string(),
   classification: territoryClassSchema,
   score: z.number().min(0).max(100),
+  territoryFitScore: z.number().min(0).max(100).optional(),
+  fitLabel: z.enum(["strong-fit", "promising-fit", "exploratory", "not-recommended"]).optional(),
+  evidenceConfidence: confidenceSchema.optional(),
+  scoreComponents: z
+    .object({
+      categoryUseCaseMatch: z.number().min(0).max(100),
+      buyerRoleOverlap: z.number().min(0).max(100),
+      jobsToBeDoneOverlap: z.number().min(0).max(100),
+      contentFormatNaturalness: z.number().min(0).max(100),
+      purchaseInfluenceIntent: z.number().min(0).max(100),
+      evidenceStrength: z.number().min(0).max(100),
+      incompatibilityPenalty: z.number().min(0).max(100),
+    })
+    .optional(),
+  riskCandidateScore: z.number().min(0).max(100).optional(),
   rationale: z.string(),
   audienceConnection: z.string(),
   customerNeed: z.string(),
@@ -77,7 +159,18 @@ export const territoryRecommendationSchema = z.object({
 export const finalReviewSchema = z.object({
   portfolio: z
     .array(z.object({ territoryId: z.string(), classification: territoryClassSchema }))
-    .length(8),
+    .min(1)
+    .max(10)
+    .superRefine((portfolio, context) => {
+      const limits = { core: 3, adjacent: 3, experimental: 2, risk: 2 } as const;
+      for (const [classification, maximum] of Object.entries(limits)) {
+        if (portfolio.filter((item) => item.classification === classification).length > maximum)
+          context.addIssue({
+            code: "custom",
+            message: `Portfolio may contain at most ${maximum} ${classification} territories.`,
+          });
+      }
+    }),
   northStarTerritoryId: z.string(),
   format: z.string(),
   creatorDirection: z.string(),
@@ -112,17 +205,24 @@ export const creatorCompassReportSchema = z.object({
   createdAt: z.string().datetime(),
   expiresAt: z.string().datetime(),
   brandProfile: brandProfileSchema,
-  readiness: z.array(readinessDimensionSchema).length(10),
+  readiness: z.array(readinessDimensionSchema).min(8).max(12),
   readinessSummary: z.object({
     status: z.enum(["ready", "promising", "prepare-first", "poor-fit", "insufficient-evidence"]),
     score: z.number().min(0).max(100).nullable(),
     summary: z.string(),
   }),
+  brandReadiness: z
+    .object({
+      status: z.enum(["ready", "promising", "prepare-first", "poor-fit", "insufficient-evidence"]),
+      score: z.number().min(0).max(100).nullable(),
+      summary: z.string(),
+    })
+    .optional(),
   recommendationState: z
     .enum(["recommendation", "preliminary-hypotheses"])
     .default("recommendation"),
   clarifyingQuestions: z.array(z.string()).default([]),
-  territories: z.array(territoryRecommendationSchema).length(8),
+  territories: z.array(territoryRecommendationSchema).max(10),
   northStar: z
     .object({
       territoryId: z.string(),
@@ -140,13 +240,38 @@ export const creatorCompassReportSchema = z.object({
     usedGpt56: z.boolean(),
     model: z.string(),
     promptVersion: z.string(),
-    qualityFlag: z.enum(["gpt56", "cloudflare-fallback", "deterministic-fallback"]),
+    qualityFlag: z.enum([
+      "gpt56",
+      "verified-fallback",
+      "cloudflare-fallback",
+      "deterministic-fallback",
+    ]),
   }),
+  deliveryQuality: z
+    .object({
+      state: z.enum(["full-report", "draft-analysis"]),
+      enrichmentSuccessRate: z.number().min(0).max(1),
+      finalReviewCompleted: z.boolean(),
+      grammarChecksPassed: z.boolean(),
+      reasons: z.array(z.string()),
+    })
+    .optional(),
   providerPath: z
     .object({
       brandExtraction: z.string(),
       candidateEnrichment: z.string(),
       finalReview: z.string(),
+      enrichmentChunks: z
+        .array(
+          z.object({
+            start: z.number().int().nonnegative(),
+            count: z.number().int().positive(),
+            provider: z.string(),
+            success: z.boolean(),
+            reason: z.string().optional(),
+          }),
+        )
+        .optional(),
     })
     .optional(),
 });

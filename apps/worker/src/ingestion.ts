@@ -320,6 +320,39 @@ export function deterministicProfile(
     lower.match(/health|medical|supplement|wellness/) ? "medical claims" : "",
     lower.match(/finance|investment|credit/) ? "financial claims" : "",
   ].filter(Boolean);
+  const software = /\b(software|saas|platform|api|app|open source|mcp|developer tool)\b/.test(
+    lower,
+  );
+  const service = /\b(agency|consulting|service|contractor|installation|book a call)\b/.test(lower);
+  const b2b = /\b(b2b|business|marketer|agency|developer|founder|team|professional|client)\b/.test(
+    lower,
+  );
+  const buyerRoles = [
+    /\bseo\b/.test(lower) ? "SEO professional" : "",
+    /growth marketer|digital marketer|marketing professional/.test(lower) ? "growth marketer" : "",
+    /agenc/.test(lower) ? "marketing agency" : "",
+    /founder|saas/.test(lower) ? "SaaS founder" : "",
+    /developer|mcp|api|codex|cursor/.test(lower) ? "developer" : "",
+    /small business/.test(lower) ? "small-business owner" : "",
+  ].filter(Boolean);
+  const useCases = [
+    /keyword research/.test(lower) ? "keyword research" : "",
+    /backlink/.test(lower) ? "backlink analysis" : "",
+    /rank tracking/.test(lower) ? "rank tracking" : "",
+    /site audit/.test(lower) ? "site audits" : "",
+    /self.host/.test(lower) ? "self-hosting" : "",
+    /\bmcp\b|model context protocol/.test(lower) ? "MCP integration" : "",
+    /ai agent/.test(lower) ? "AI agent integration" : "",
+    /conversion|landing page/.test(lower) ? "conversion optimization" : "",
+  ].filter(Boolean);
+  const jobsToBeDone = [
+    /keyword research/.test(lower) ? "research keyword opportunities" : "",
+    /backlink/.test(lower) ? "analyze backlink profiles" : "",
+    /rank tracking/.test(lower) ? "monitor search rankings" : "",
+    /site audit/.test(lower) ? "audit website SEO" : "",
+    /self.host/.test(lower) ? "self-host the software" : "",
+    /\bmcp\b|ai agent/.test(lower) ? "connect AI agents to SEO data" : "",
+  ].filter(Boolean);
   return {
     canonicalDomain: domain,
     brandName: title.replace(/\s*[|–—-].*$/, "").slice(0, 80),
@@ -335,6 +368,35 @@ export function deterministicProfile(
         : "people seeking a practical improvement",
     ],
     customerNeeds: ["make a more confident choice"],
+    businessModel: /open source/.test(lower)
+      ? "open-source"
+      : software
+        ? "saas"
+        : service
+          ? "service"
+          : /subscription|monthly/.test(lower)
+            ? "subscription"
+            : "unknown",
+    productType: software ? "software" : service ? "service" : "physical-product",
+    audienceType: b2b ? "b2b" : "b2c",
+    buyerRoles: buyerRoles.length ? buyerRoles : b2b ? ["business decision-maker"] : [],
+    userRoles: buyerRoles,
+    industries: [
+      /\bseo\b|marketing/.test(lower) ? "marketing" : "",
+      software ? "software" : "",
+      /e.?commerce/.test(lower) ? "e-commerce" : "",
+    ].filter(Boolean),
+    useCases,
+    jobsToBeDone: jobsToBeDone.length ? jobsToBeDone : ["evaluate the offer"],
+    buyerGoalVerbPhrases: jobsToBeDone.length ? jobsToBeDone : ["evaluate the offer"],
+    problemStatements: [],
+    technicalLevel: /developer|api|mcp|self.host|open source/.test(lower) ? "technical" : "mixed",
+    purchaseMotion: software ? "product-led" : service ? "consultative" : "retail",
+    campaignAssetType: software
+      ? "software-access"
+      : service
+        ? "service-experience"
+        : "physical-sample",
     differentiators: evidence.slice(1, 3).map((item) => item.excerpt.slice(0, 100)),
     pricePositioning: price ? "mid-market" : "unknown",
     purchaseFriction:

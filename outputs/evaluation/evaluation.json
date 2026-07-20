@@ -1,235 +1,156 @@
 {
-  "generatedAt": "2026-07-16T22:05:13.435Z",
-  "methodology": "2026.07.2",
+  "generatedAt": "2026-07-20T01:34:27.134Z",
+  "methodology": "2026.07.3",
   "passed": true,
   "cases": [
     {
-      "case": "TrailKind",
+      "case": "OpenSEO",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "outdoor-recreation",
-      "readinessStatus": "prepare-first"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "seo-and-search-marketing",
+        "ai-agents-and-workflow-automation",
+        "agency-operations",
+        "web-development",
+        "growth-marketing-and-conversion-optimization",
+        "open-source-and-self-hosting"
+      ],
+      "northStar": "seo-and-search-marketing"
     },
     {
-      "case": "DailyTable",
+      "case": "PipelineFlow",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "cooking-and-meal-preparation",
-      "readinessStatus": "prepare-first"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "growth-marketing-and-conversion-optimization",
+        "no-code-and-business-automation",
+        "ai-agents-and-workflow-automation",
+        "saas-and-indie-hacking",
+        "seo-and-search-marketing",
+        "open-source-and-self-hosting"
+      ],
+      "northStar": "growth-marketing-and-conversion-optimization"
     },
     {
-      "case": "Main Street HVAC",
+      "case": "CodeHarbor",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "home-improvement",
-      "readinessStatus": "prepare-first"
-    },
-    {
-      "case": "ClearClaim",
-      "passed": true,
-      "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "wellness-routines",
-      "readinessStatus": "prepare-first"
-    },
-    {
-      "case": "QuietDesk",
-      "passed": true,
-      "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "productivity-systems",
-      "readinessStatus": "prepare-first"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "developer-tools",
+        "open-source-and-self-hosting",
+        "ai-agents-and-workflow-automation",
+        "web-development",
+        "saas-and-indie-hacking"
+      ],
+      "northStar": "developer-tools"
     },
     {
       "case": "GlowTheory",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "skincare-education",
-      "readinessStatus": "prepare-first"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "skincare-education",
+        "beauty-tutorials",
+        "fitness-education",
+        "running"
+      ],
+      "northStar": "skincare-education"
     },
     {
-      "case": "PawRoutine",
+      "case": "TrailKind",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "pet-care",
-      "readinessStatus": "prepare-first"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "camping",
+        "outdoor-recreation"
+      ],
+      "northStar": "camping"
     },
     {
-      "case": "CourseCraft",
+      "case": "Main Street HVAC",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "career-development",
-      "readinessStatus": "prepare-first"
-    },
-    {
-      "case": "LoopBottle",
-      "passed": true,
-      "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "sustainable-living",
-      "readinessStatus": "prepare-first"
-    },
-    {
-      "case": "PixelForge",
-      "passed": true,
-      "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "miniature-painting",
-      "readinessStatus": "prepare-first"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "home-improvement",
+        "local-discovery",
+        "small-business-website-improvement"
+      ],
+      "northStar": "home-improvement"
     },
     {
       "case": "ManyThings",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "ABSTAINED",
-      "readinessStatus": "insufficient-evidence"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [
+        "web-development",
+        "no-code-and-business-automation",
+        "ai-agents-and-workflow-automation",
+        "developer-tools"
+      ],
+      "northStar": "ABSTAINED"
     },
     {
       "case": "SparseBrand",
       "passed": true,
       "schemaValid": true,
-      "uniqueTerritories": true,
-      "evidenceCoverage": true,
-      "prohibitedClaims": false,
-      "plausibleCore": true,
-      "readinessExpected": true,
-      "abstentionExpected": true,
-      "classCounts": {
-        "core": 3,
-        "adjacent": 2,
-        "experimental": 1,
-        "risk": 2
-      },
-      "northStar": "ABSTAINED",
-      "readinessStatus": "insufficient-evidence"
+      "expectedTerritory": true,
+      "prohibitedAbsent": true,
+      "variableCounts": true,
+      "abstentionCorrect": true,
+      "readinessProfileCorrect": true,
+      "rankTrackingSafe": true,
+      "grammarSafe": true,
+      "recommended": [],
+      "northStar": "ABSTAINED"
     }
   ]
 }

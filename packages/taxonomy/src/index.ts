@@ -10,6 +10,19 @@ export type CreatorTerritory = {
   riskTags: string[];
   searchTemplates: string[];
   keywords: string[];
+  audienceType: "b2b" | "b2c" | "mixed";
+  buyerRoles: string[];
+  userRoles: string[];
+  industries: string[];
+  useCases: string[];
+  jobsToBeDone: string[];
+  compatibleBusinessModels: string[];
+  compatibleProductTypes: string[];
+  technicalLevel: "non-technical" | "mixed" | "technical" | "developer";
+  purchaseIntent: "low" | "medium" | "high";
+  exclusionTags: string[];
+  superficialMatchRisks: string[];
+  categorySignals: string[];
 };
 
 type Seed = readonly [
@@ -21,6 +34,90 @@ type Seed = readonly [
 ];
 
 const seeds: Seed[] = [
+  [
+    "SEO and search marketing",
+    "search visibility|qualified traffic|competitive insight",
+    "site audits|keyword research walkthroughs|SERP teardowns",
+    "B2B|measurable|technical",
+    "performance claims|data quality",
+  ],
+  [
+    "AI agents and workflow automation",
+    "automation|leverage|reliable workflows",
+    "agent builds|workflow demos|integration tutorials",
+    "B2B|technical|demonstrable",
+    "security|automation claims",
+  ],
+  [
+    "Developer tools",
+    "developer productivity|control|technical capability",
+    "code walkthroughs|benchmarks|integration builds",
+    "B2B|developer|technical",
+    "security|benchmark claims",
+  ],
+  [
+    "Open source and self-hosting",
+    "ownership|transparency|control",
+    "self-hosting guides|architecture reviews|migration demos",
+    "open source|developer|technical",
+    "security|maintenance burden",
+  ],
+  [
+    "SaaS and indie hacking",
+    "sustainable growth|shipping products|efficient operations",
+    "build in public|tool stack reviews|founder case studies",
+    "B2B|software|measurable",
+    "income claims|survivorship bias",
+  ],
+  [
+    "Web development",
+    "building websites|performance|maintainability",
+    "code tutorials|site rebuilds|stack comparisons",
+    "B2B|developer|technical",
+    "security|accessibility claims",
+  ],
+  [
+    "Growth marketing and conversion optimization",
+    "qualified growth|conversion improvement|measurement",
+    "funnel teardowns|experiments|landing-page audits",
+    "B2B|measurable|educational",
+    "performance claims|attribution",
+  ],
+  [
+    "Agency operations",
+    "client delivery|margin|repeatable processes",
+    "client workflows|tool comparisons|delivery playbooks",
+    "B2B|service|operational",
+    "client confidentiality|outcome claims",
+  ],
+  [
+    "No-code and business automation",
+    "automation|efficiency|accessible systems",
+    "workflow builds|tool comparisons|templates",
+    "B2B|software|demonstrable",
+    "security|automation claims",
+  ],
+  [
+    "E-commerce growth",
+    "profitable growth|store conversion|customer acquisition",
+    "store teardowns|growth experiments|tool comparisons",
+    "B2B|e-commerce|measurable",
+    "income claims|attribution",
+  ],
+  [
+    "Small-business website improvement",
+    "local growth|credible websites|lead generation",
+    "website audits|before and after|fix lists",
+    "B2B|service|demonstrable",
+    "performance claims|local variation",
+  ],
+  [
+    "AI industry news",
+    "novelty|industry awareness|future readiness",
+    "news analysis|tool roundups|trend commentary",
+    "technical|timely|awareness",
+    "hype|weak purchase intent",
+  ],
   [
     "Consumer technology",
     "capability|convenience|novelty",
@@ -520,6 +617,291 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
+type TerritoryMetadata = Pick<
+  CreatorTerritory,
+  | "audienceType"
+  | "buyerRoles"
+  | "userRoles"
+  | "industries"
+  | "useCases"
+  | "jobsToBeDone"
+  | "compatibleBusinessModels"
+  | "compatibleProductTypes"
+  | "technicalLevel"
+  | "purchaseIntent"
+  | "exclusionTags"
+  | "superficialMatchRisks"
+  | "categorySignals"
+>;
+
+const technicalMetadata: Record<string, Partial<TerritoryMetadata>> = {
+  "skincare-education": {
+    buyerRoles: ["skincare buyer", "beauty shopper"],
+    userRoles: ["skincare user"],
+    industries: ["skincare", "beauty"],
+    useCases: ["skincare routine", "ingredient education", "sensitive-skin routine"],
+    jobsToBeDone: [
+      "choose a skincare routine",
+      "understand skincare ingredients",
+      "care for sensitive skin",
+    ],
+    categorySignals: ["skincare", "skin care", "serum", "sensitive skin"],
+  },
+  "beauty-tutorials": {
+    buyerRoles: ["beauty shopper", "makeup buyer"],
+    userRoles: ["beauty product user"],
+    industries: ["beauty", "cosmetics"],
+    useCases: ["beauty routine", "makeup application", "product wear test"],
+    jobsToBeDone: ["choose beauty products", "learn a beauty routine", "compare product wear"],
+    categorySignals: ["beauty", "makeup", "cosmetics"],
+  },
+  "home-improvement": {
+    buyerRoles: ["homeowner", "home improvement buyer"],
+    userRoles: ["homeowner", "DIY renovator"],
+    industries: ["home improvement", "residential services", "HVAC"],
+    useCases: ["HVAC installation", "heating repair", "home repair", "renovation"],
+    jobsToBeDone: [
+      "repair a home system",
+      "replace an unreliable heating system",
+      "improve a home",
+    ],
+    categorySignals: ["home improvement", "HVAC", "heating", "cooling", "residential contractor"],
+  },
+  "local-discovery": {
+    buyerRoles: ["local customer", "homeowner", "local business buyer"],
+    userRoles: ["local resident"],
+    industries: ["local services", "local business"],
+    useCases: ["find a local service", "compare local providers"],
+    jobsToBeDone: ["find a trusted local provider", "choose a local service"],
+    categorySignals: ["local service", "local business", "near me"],
+  },
+  "seo-and-search-marketing": {
+    buyerRoles: [
+      "SEO professional",
+      "growth marketer",
+      "content marketer",
+      "marketing agency",
+      "SaaS founder",
+    ],
+    userRoles: ["SEO specialist", "content strategist", "digital marketer"],
+    industries: ["marketing", "SaaS", "e-commerce", "agency"],
+    useCases: [
+      "keyword research",
+      "backlink analysis",
+      "rank tracking",
+      "site audits",
+      "SERP analysis",
+    ],
+    jobsToBeDone: [
+      "improve search visibility",
+      "find keyword opportunities",
+      "audit website performance",
+      "analyze competitors",
+    ],
+    categorySignals: [
+      "SEO",
+      "search marketing",
+      "search engine optimization",
+      "SERP",
+      "keyword research",
+      "backlinks",
+      "rank tracking",
+      "site audit",
+    ],
+  },
+  "ai-agents-and-workflow-automation": {
+    buyerRoles: ["developer", "automation lead", "technical founder", "operations leader"],
+    userRoles: ["AI agent builder", "developer", "automation specialist"],
+    industries: ["software", "SaaS", "technology", "operations"],
+    useCases: ["AI agent integration", "MCP integration", "workflow automation", "tool calling"],
+    jobsToBeDone: [
+      "connect agents to reliable data",
+      "automate repeatable work",
+      "build agent workflows",
+    ],
+    categorySignals: [
+      "AI agent",
+      "agent workflow",
+      "MCP",
+      "Model Context Protocol",
+      "automation",
+      "tool calling",
+    ],
+  },
+  "developer-tools": {
+    buyerRoles: ["developer", "engineering leader", "technical founder"],
+    userRoles: ["software developer", "AI engineer", "web developer"],
+    industries: ["software", "SaaS", "technology"],
+    useCases: ["developer integration", "API integration", "CLI workflow", "software development"],
+    jobsToBeDone: [
+      "build software faster",
+      "integrate reliable tools",
+      "inspect technical systems",
+    ],
+    categorySignals: ["developer tool", "API", "CLI", "SDK", "MCP server", "open source software"],
+  },
+  "open-source-and-self-hosting": {
+    buyerRoles: ["developer", "technical founder", "IT leader"],
+    userRoles: ["self-hoster", "developer", "system administrator"],
+    industries: ["software", "technology", "IT"],
+    useCases: ["self-hosting", "source-code inspection", "open-source deployment"],
+    jobsToBeDone: ["retain control of software", "self-host a service", "avoid vendor lock-in"],
+    categorySignals: ["open source", "self-host", "self hosting", "GitHub", "source code"],
+  },
+  "saas-and-indie-hacking": {
+    buyerRoles: ["SaaS founder", "indie hacker", "product leader", "growth marketer"],
+    userRoles: ["founder", "operator", "marketer"],
+    industries: ["SaaS", "software", "startups"],
+    useCases: ["software evaluation", "tool-stack selection", "product-led growth"],
+    jobsToBeDone: [
+      "grow a software business",
+      "choose an affordable SaaS tool",
+      "operate a lean product",
+    ],
+    categorySignals: [
+      "SaaS",
+      "software subscription",
+      "usage-based pricing",
+      "indie hacker",
+      "founder",
+    ],
+  },
+  "web-development": {
+    buyerRoles: ["web developer", "technical founder", "agency owner"],
+    userRoles: ["web developer", "frontend developer", "site owner"],
+    industries: ["web development", "software", "agency"],
+    useCases: ["website development", "site optimization", "technical SEO"],
+    jobsToBeDone: ["build a better website", "improve site performance", "connect website tools"],
+    categorySignals: ["web development", "website", "frontend", "technical SEO", "Search Console"],
+  },
+  "growth-marketing-and-conversion-optimization": {
+    buyerRoles: ["growth marketer", "conversion specialist", "marketing leader", "SaaS founder"],
+    userRoles: ["growth marketer", "CRO specialist", "digital marketer"],
+    industries: ["marketing", "SaaS", "e-commerce"],
+    useCases: [
+      "conversion optimization",
+      "growth experiments",
+      "funnel analysis",
+      "competitor analysis",
+    ],
+    jobsToBeDone: [
+      "increase qualified traffic",
+      "improve conversion rates",
+      "find growth opportunities",
+    ],
+    categorySignals: [
+      "growth marketing",
+      "conversion optimization",
+      "CRO",
+      "funnel",
+      "landing page",
+      "competitor analysis",
+    ],
+  },
+  "agency-operations": {
+    buyerRoles: ["agency owner", "agency strategist", "client services leader"],
+    userRoles: ["agency marketer", "SEO consultant", "account strategist"],
+    industries: ["agency", "consulting", "marketing services"],
+    useCases: ["client reporting", "client research", "repeatable delivery", "multi-client SEO"],
+    jobsToBeDone: [
+      "deliver client work efficiently",
+      "standardize agency workflows",
+      "research client opportunities",
+    ],
+    categorySignals: ["agency", "client work", "consulting", "client reporting"],
+  },
+  "no-code-and-business-automation": {
+    buyerRoles: ["operations leader", "small-business owner", "automation consultant"],
+    userRoles: ["no-code builder", "operations specialist", "automation consultant"],
+    industries: ["operations", "small business", "consulting"],
+    useCases: ["business automation", "no-code workflow", "systems integration"],
+    jobsToBeDone: ["automate business work", "connect business tools", "reduce manual tasks"],
+    categorySignals: ["no-code", "business automation", "workflow automation", "integration"],
+  },
+  "e-commerce-growth": {
+    buyerRoles: ["e-commerce manager", "store owner", "growth marketer"],
+    userRoles: ["e-commerce marketer", "store operator"],
+    industries: ["e-commerce", "retail"],
+    useCases: ["store SEO", "product-page optimization", "e-commerce growth"],
+    jobsToBeDone: ["grow store traffic", "improve product discovery", "increase store conversion"],
+    categorySignals: ["e-commerce", "online store", "store SEO", "Shopify", "product pages"],
+  },
+  "small-business-website-improvement": {
+    buyerRoles: ["small-business owner", "local business marketer", "web consultant"],
+    userRoles: ["site owner", "small-business marketer"],
+    industries: ["small business", "local services"],
+    useCases: ["website audit", "local website improvement", "lead generation"],
+    jobsToBeDone: [
+      "improve a small-business website",
+      "generate more website leads",
+      "fix discoverability problems",
+    ],
+    categorySignals: ["small business", "website improvement", "website audit", "local SEO"],
+  },
+  "ai-industry-news": {
+    buyerRoles: ["technology professional"],
+    userRoles: ["AI enthusiast"],
+    industries: ["technology", "media"],
+    useCases: ["follow AI news", "discover AI tools"],
+    jobsToBeDone: ["stay current on AI news"],
+    categorySignals: ["AI news", "AI tools", "artificial intelligence"],
+    superficialMatchRisks: ["AI", "agent", "MCP"],
+    purchaseIntent: "low",
+  },
+  "consumer-technology": {
+    buyerRoles: ["consumer technology buyer"],
+    userRoles: ["technology consumer"],
+    useCases: ["evaluate consumer devices", "set up personal technology"],
+    jobsToBeDone: ["choose a consumer technology product"],
+    categorySignals: ["consumer technology", "consumer device", "personal technology", "gadget"],
+    superficialMatchRisks: ["software", "technology", "AI", "open source"],
+    purchaseIntent: "medium",
+  },
+};
+
+const b2bNames =
+  /SEO|AI agents|Developer tools|Open source|SaaS|Web development|Growth marketing|Agency operations|No-code|E-commerce growth|Entrepreneurship|Marketing education|E-commerce operations|Creator business|Freelancing|Leadership and management/i;
+const lifestyleNames =
+  /Beauty|Fashion|Gaming|Gardening|Camping|Skincare|Hair care|Fragrance|Cooking|Fitness|Wellness|Interior|Pet care|Outdoor|Travel|Parenting|Wedding|Coffee|Cycling|Running|Water sports|Zero-waste/i;
+
+function metadataFor(
+  name: string,
+  motivations: string,
+  formats: string,
+  traits: string,
+): TerritoryMetadata {
+  const id = slugify(name);
+  const explicit = technicalMetadata[id] ?? {};
+  const b2b = b2bNames.test(name) || /\bB2B\b/i.test(traits);
+  const lifestyle = lifestyleNames.test(name);
+  return {
+    audienceType: explicit.audienceType ?? (b2b ? "b2b" : lifestyle ? "b2c" : "mixed"),
+    buyerRoles: explicit.buyerRoles ?? [`${name.toLowerCase()} buyer`],
+    userRoles: explicit.userRoles ?? [`${name.toLowerCase()} audience member`],
+    industries: explicit.industries ?? [name.toLowerCase()],
+    useCases: explicit.useCases ?? split(formats),
+    jobsToBeDone: explicit.jobsToBeDone ?? split(motivations).map((item) => `pursue ${item}`),
+    compatibleBusinessModels:
+      explicit.compatibleBusinessModels ??
+      (b2b ? ["saas", "service", "subscription"] : ["e-commerce", "subscription", "service"]),
+    compatibleProductTypes:
+      explicit.compatibleProductTypes ??
+      (b2b
+        ? ["software", "service", "digital-product"]
+        : ["physical-product", "service", "digital-product"]),
+    technicalLevel:
+      explicit.technicalLevel ??
+      (/developer|technical|open source|AI agents|web development/i.test(name)
+        ? "technical"
+        : "mixed"),
+    purchaseIntent: explicit.purchaseIntent ?? (b2b ? "high" : "medium"),
+    exclusionTags:
+      explicit.exclusionTags ?? (lifestyle ? ["b2b-software-without-specific-bridge"] : []),
+    superficialMatchRisks: explicit.superficialMatchRisks ?? split(motivations),
+    categorySignals: explicit.categorySignals ?? [name, ...split(traits)],
+  };
+}
+
 export const creatorTerritories: CreatorTerritory[] = seeds.map(
   ([name, motivations, formats, traits, risks]) => ({
     id: slugify(name),
@@ -537,6 +919,7 @@ export const creatorTerritories: CreatorTerritory[] = seeds.map(
       `${name.toLowerCase()} product review`,
     ],
     keywords: [...split(motivations), ...split(traits), ...name.toLowerCase().split(" ")],
+    ...metadataFor(name, motivations, formats, traits),
   }),
 );
 

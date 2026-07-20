@@ -1,15 +1,37 @@
 import { describe, expect, it } from "vitest";
 import type { BrandProfile } from "@creator-compass/contracts";
-import { assembleDeterministicReport, rankTerritories, scoreReadiness } from "./index";
+import {
+  assembleDeterministicReport,
+  rankRiskCandidates,
+  rankTerritories,
+  scoreReadiness,
+  selectPortfolio,
+} from "./index";
 
-const profile: BrandProfile = {
-  canonicalDomain: "example.com",
-  brandName: "FocusKit",
-  summary:
-    "A visual productivity planning system that helps remote workers and creative teams organize priorities, reduce distraction, and plan focused work every week.",
-  products: [{ name: "FocusKit Planner", category: "productivity" }],
-  targetCustomers: ["remote workers", "creative teams"],
-  customerNeeds: ["organize priorities", "reduce distraction"],
+const profile = (
+  name: string,
+  summary: string,
+  overrides: Partial<BrandProfile> = {},
+): BrandProfile => ({
+  canonicalDomain: `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.example`,
+  brandName: name,
+  summary,
+  products: [{ name: `${name} offer`, category: "productivity" }],
+  targetCustomers: ["remote professionals", "creative teams"],
+  customerNeeds: ["organize weekly priorities", "reduce distracting work"],
+  businessModel: "subscription",
+  productType: "physical-product",
+  audienceType: "b2c",
+  buyerRoles: ["remote professional"],
+  userRoles: ["creative professional"],
+  industries: ["productivity"],
+  useCases: ["weekly planning"],
+  jobsToBeDone: ["organize weekly priorities", "plan focused work"],
+  buyerGoalVerbPhrases: ["organize weekly priorities"],
+  problemStatements: ["Priorities are scattered across the week."],
+  technicalLevel: "non-technical",
+  purchaseMotion: "retail",
+  campaignAssetType: "physical-sample",
   differentiators: ["visual weekly planning"],
   pricePositioning: "mid-market",
   purchaseFriction: "low",
@@ -17,145 +39,312 @@ const profile: BrandProfile = {
   trustRequirement: "medium",
   repeatPurchasePotential: "medium",
   riskTags: [],
-  unknowns: ["tracking readiness"],
+  unknowns: ["campaign attribution"],
   evidence: [
     {
       id: "e1",
       sourceUrl: "https://example.com",
-      excerpt:
-        "FocusKit Planner helps remote workers and creative teams plan focused work every week.",
+      excerpt: summary,
       kind: "website",
     },
     {
       id: "e2",
-      sourceUrl: "https://example.com/how-it-works",
-      excerpt:
-        "A visual weekly tutorial with affiliate link tracking, creator samples in stock, approved claims, and disclosure guidelines.",
+      sourceUrl: "https://example.com/details",
+      excerpt: `The ${name} offer includes documented setup details and a clear customer use case.`,
       kind: "website",
     },
   ],
-};
+  ...overrides,
+});
 
-describe("deterministic scoring", () => {
-  it("is reproducible and inspectable", () => {
-    expect(scoreReadiness(profile)).toEqual(scoreReadiness(profile));
-    expect(rankTerritories(profile)[0]?.score).toBeGreaterThan(0);
+const openSeo = profile(
+  "OpenSEO",
+  "An open-source B2B SEO software platform for marketers, agencies, SaaS founders, and developers building AI-agent workflows.",
+  {
+    canonicalDomain: "openseo.so",
+    products: [{ name: "OpenSEO", category: "SEO tools", priceText: "Starts at $10/month" }],
+    targetCustomers: [
+      "SEO professionals",
+      "growth marketers",
+      "marketing agencies",
+      "SaaS founders",
+      "developers",
+    ],
+    customerNeeds: [
+      "research keyword opportunities",
+      "analyze backlinks",
+      "monitor search rankings",
+      "audit websites",
+      "connect AI agents to SEO data",
+    ],
+    businessModel: "open-source",
+    productType: "software",
+    audienceType: "b2b",
+    buyerRoles: [
+      "SEO professional",
+      "growth marketer",
+      "agency owner",
+      "SaaS founder",
+      "developer",
+    ],
+    userRoles: ["SEO specialist", "developer", "content strategist"],
+    industries: ["marketing", "SaaS", "software", "agency"],
+    useCases: [
+      "keyword research",
+      "backlink analysis",
+      "rank tracking",
+      "site audits",
+      "self-hosting",
+      "MCP integration",
+      "AI agent integration",
+    ],
+    jobsToBeDone: [
+      "research keyword opportunities",
+      "analyze backlink profiles",
+      "monitor search rankings",
+      "audit website SEO",
+      "self-host the software",
+      "connect AI agents to SEO data",
+    ],
+    buyerGoalVerbPhrases: ["improve search visibility", "connect AI agents to SEO data"],
+    technicalLevel: "technical",
+    purchaseMotion: "product-led",
+    campaignAssetType: "software-access",
+    differentiators: ["open source", "usage-based pricing", "self-hosting", "MCP integration"],
+    repeatPurchasePotential: "high",
+    trustRequirement: "high",
+    evidence: [
+      {
+        id: "o1",
+        sourceUrl: "https://openseo.so/",
+        excerpt:
+          "OpenSEO is an open-source SEO platform for keyword research, backlinks, rank tracking, and site audits, billed by usage.",
+        kind: "website",
+      },
+      {
+        id: "o2",
+        sourceUrl: "https://openseo.so/features/mcp",
+        excerpt:
+          "Connect Claude, Cursor, Codex, or any MCP client to keyword, SERP, backlink, rank-tracking, and Search Console data.",
+        kind: "website",
+      },
+      {
+        id: "o3",
+        sourceUrl: "https://openseo.so/pricing",
+        excerpt: "Self-host OpenSEO or use the hosted plan starting at $10 per month.",
+        kind: "website",
+      },
+    ],
+  },
+);
+
+describe("territory fit scoring", () => {
+  it("ranks OpenSEO by buyer and use-case fit instead of general readiness", () => {
+    const ranked = rankTerritories(openSeo);
+    const top = ranked.slice(0, 10).map((item) => item.territory.id);
+    expect(top).toContain("seo-and-search-marketing");
+    expect(top).toContain("ai-agents-and-workflow-automation");
+    expect(top).toContain("developer-tools");
+    for (const id of [
+      "beauty-tutorials",
+      "gardening",
+      "camping",
+      "gaming",
+      "zero-waste-making",
+      "writing-and-journaling",
+    ])
+      expect(
+        ranked.find((item) => item.territory.id === id)?.territoryFitScore,
+      ).toBeLessThanOrEqual(18);
   });
 
-  it("creates exactly the required territory portfolio", () => {
-    const report = assembleDeterministicReport(profile, {
-      id: "12345678-1234",
-      slug: "sample",
-      now: new Date("2026-07-16T12:00:00Z"),
-    });
-    expect(report.territories.filter((item) => item.classification === "core")).toHaveLength(3);
-    expect(report.territories.filter((item) => item.classification === "adjacent")).toHaveLength(2);
+  it("records inspectable component scores and keeps readiness out of fit", () => {
+    const seo = rankTerritories(openSeo).find(
+      (item) => item.territory.id === "seo-and-search-marketing",
+    )!;
+    const beauty = rankTerritories(openSeo).find(
+      (item) => item.territory.id === "beauty-tutorials",
+    )!;
+    expect(seo.scoreComponents.categoryUseCaseMatch).toBeGreaterThanOrEqual(90);
+    expect(seo.scoreComponents.buyerRoleOverlap).toBeGreaterThanOrEqual(90);
+    expect(beauty.scoreComponents.incompatibilityPenalty).toBeGreaterThanOrEqual(80);
+    expect(beauty.eligible).toBe(false);
+  });
+
+  it("uses bounded maximums and does not fill weak portfolio slots", () => {
+    const portfolio = selectPortfolio(openSeo);
     expect(
-      report.territories.filter((item) => item.classification === "experimental"),
-    ).toHaveLength(1);
-    expect(report.territories.filter((item) => item.classification === "risk")).toHaveLength(2);
-    expect(report.readiness).toHaveLength(10);
-    expect(report.recommendationState).toBe("recommendation");
-    expect(report.northStar).not.toBeNull();
+      portfolio.filter((item) => item.classification === "core").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(portfolio.filter((item) => item.classification === "core").length).toBeLessThanOrEqual(
+      3,
+    );
+    expect(
+      portfolio.filter((item) => item.classification === "adjacent").length,
+    ).toBeLessThanOrEqual(3);
+    expect(
+      portfolio.filter((item) => item.classification === "experimental").length,
+    ).toBeLessThanOrEqual(2);
+    expect(portfolio.filter((item) => item.classification === "risk").length).toBeLessThanOrEqual(
+      2,
+    );
+    expect(
+      portfolio
+        .filter((item) => ["core", "adjacent"].includes(item.classification))
+        .map((item) => item.territoryId),
+    ).not.toEqual(expect.arrayContaining(["beauty-tutorials", "gardening", "camping", "gaming"]));
   });
 
-  it("prioritizes explicit marketing evidence over generic home navigation", () => {
-    const marketingProfile: BrandProfile = {
-      ...profile,
-      brandName: "CampaignSuite",
-      summary:
-        "Email marketing and SMS automation software for small businesses to create campaigns and understand customer engagement.",
-      products: [{ name: "CampaignSuite", category: "marketing" }],
-      targetCustomers: ["small business marketers"],
-      customerNeeds: ["create email campaigns and automate customer communication"],
-    };
-    const ranked = rankTerritories(marketingProfile);
-    const marketing = ranked.find((item) => item.territory.id === "marketing-education");
-    const home = ranked.find((item) => item.territory.id === "home-improvement");
-    expect(marketing?.score).toBeGreaterThan(home?.score ?? 0);
+  it("creates strategic OpenSEO risks rather than random bottom categories", () => {
+    expect(
+      rankRiskCandidates(openSeo)
+        .slice(0, 2)
+        .map((item) => item.territory.id),
+    ).toEqual(["ai-industry-news", "consumer-technology"]);
   });
 
-  it("abstains for SparseBrand without inventing a North Star or score", () => {
-    const sparse: BrandProfile = {
-      ...profile,
-      brandName: "SparseBrand",
-      summary: "SparseBrand makes things.",
+  it("keeps deterministic language grammatical", () => {
+    const report = assembleDeterministicReport({ ...openSeo, customerNeeds: ["SEO platform"] });
+    expect(JSON.stringify(report)).not.toMatch(/trying to SEO platform/i);
+    expect(
+      report.territories.every((item) =>
+        /^(improve|increase|reduce|find|analyze|audit|build|connect|automate|choose|compare|evaluate|grow|manage|research|track|understand|use|create|deliver|optimize|identify|retain|avoid|monitor|self-host)/i.test(
+          item.customerNeed,
+        ),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("product-aware readiness", () => {
+  it("does not treat rank tracking as creator-campaign attribution", () => {
+    const tracking = scoreReadiness(openSeo).find((item) => item.key === "tracking-readiness");
+    expect(tracking).toMatchObject({ status: "unknown", score: null, evidenceIds: [] });
+  });
+
+  it("uses software readiness dimensions for SaaS and open-source tools", () => {
+    const dimensions = scoreReadiness(openSeo);
+    expect(dimensions.map((item) => item.key)).toEqual(
+      expect.arrayContaining([
+        "demo-trial-readiness",
+        "creator-account-provisioning",
+        "onboarding-documentation",
+        "test-environment",
+      ]),
+    );
+    expect(dimensions.map((item) => item.key)).not.toContain("sample-inventory");
+  });
+
+  it("uses physical readiness dimensions for e-commerce products", () => {
+    const beauty = profile(
+      "GlowTheory",
+      "A direct-to-consumer skincare serum for people with sensitive skin.",
+      {
+        products: [{ name: "GlowTheory Serum", category: "skincare", priceText: "$38" }],
+        targetCustomers: ["people with sensitive skin"],
+        customerNeeds: ["choose a gentle skincare routine"],
+        buyerRoles: ["skincare buyer"],
+        userRoles: ["skincare user"],
+        industries: ["beauty", "skincare"],
+        useCases: ["sensitive-skin routine"],
+        jobsToBeDone: ["choose a gentle skincare routine"],
+        productType: "physical-product",
+        businessModel: "e-commerce",
+      },
+    );
+    const dimensions = scoreReadiness(beauty);
+    expect(dimensions.map((item) => item.key)).toEqual(
+      expect.arrayContaining(["sample-inventory", "shipping-fulfillment", "demonstration-units"]),
+    );
+    expect(dimensions.map((item) => item.key)).not.toContain("creator-account-provisioning");
+  });
+
+  it("does not infer claims safety from silence", () => {
+    expect(scoreReadiness(openSeo).find((item) => item.key === "claims-safety")?.status).not.toBe(
+      "strong",
+    );
+  });
+});
+
+describe("cross-category regressions", () => {
+  it("retains relevant consumer beauty recommendations", () => {
+    const beauty = profile(
+      "GlowTheory",
+      "A skincare serum and routine for sensitive-skin consumers.",
+      {
+        products: [{ name: "GlowTheory Serum", category: "skincare" }],
+        targetCustomers: ["sensitive-skin consumers", "beauty shoppers"],
+        customerNeeds: ["choose a gentle skincare routine"],
+        buyerRoles: ["skincare buyer"],
+        userRoles: ["skincare user"],
+        industries: ["beauty", "skincare"],
+        useCases: ["skincare routine", "ingredient education"],
+        jobsToBeDone: ["choose a gentle skincare routine"],
+        businessModel: "e-commerce",
+        productType: "physical-product",
+      },
+    );
+    const recommended = selectPortfolio(beauty)
+      .filter((item) => ["core", "adjacent"].includes(item.classification))
+      .map((item) => item.territoryId);
+    expect(recommended).toEqual(expect.arrayContaining(["skincare-education"]));
+  });
+
+  it("supports a focused local service", () => {
+    const local = profile(
+      "Main Street HVAC",
+      "Residential heating and cooling installation for local homeowners.",
+      {
+        products: [{ name: "HVAC installation", category: "home improvement service" }],
+        targetCustomers: ["local homeowners"],
+        customerNeeds: ["replace an unreliable heating system"],
+        buyerRoles: ["homeowner"],
+        industries: ["home improvement", "local services"],
+        useCases: ["HVAC installation", "heating repair"],
+        jobsToBeDone: ["replace an unreliable heating system"],
+        businessModel: "service",
+        productType: "service",
+        audienceType: "b2c",
+        purchaseMotion: "consultative",
+        campaignAssetType: "service-experience",
+      },
+    );
+    expect(
+      rankTerritories(local)
+        .slice(0, 5)
+        .map((item) => item.territory.id),
+    ).toContain("home-improvement");
+  });
+
+  it("abstains for sparse and broad multi-category brands", () => {
+    const sparse = profile("SparseBrand", "A new brand.", {
       products: [],
       targetCustomers: [],
       customerNeeds: [],
+      jobsToBeDone: [],
       evidence: [
-        {
-          id: "s1",
-          sourceUrl: "https://sparse.example",
-          excerpt: "Welcome to SparseBrand.",
-          kind: "website",
-        },
+        { id: "s1", sourceUrl: "https://sparse.example", excerpt: "A new brand.", kind: "website" },
       ],
-    };
-    const report = assembleDeterministicReport(sparse);
-    expect(report.recommendationState).toBe("preliminary-hypotheses");
-    expect(report.readinessSummary).toMatchObject({ status: "insufficient-evidence", score: null });
-    expect(report.northStar).toBeNull();
-    expect(report.clarifyingQuestions.length).toBeGreaterThanOrEqual(3);
-  });
-
-  it("abstains for an unfocused broad multi-category brand", () => {
-    const broad: BrandProfile = {
-      ...profile,
-      brandName: "Everything House",
-      summary:
-        "A multi-category retailer offering a wide range of unrelated products for everyone across home, beauty, electronics, and food.",
-      products: [
-        { name: "Lamp", category: "home" },
-        { name: "Serum", category: "beauty" },
-        { name: "Headphones", category: "electronics" },
-        { name: "Snacks", category: "food" },
-      ],
-      targetCustomers: ["everyone"],
-    };
-    expect(assembleDeterministicReport(broad).northStar).toBeNull();
-  });
-
-  it.each([
-    ["regulated", { riskTags: ["medical claims"], trustRequirement: "high" as const }],
-    [
-      "service",
+    });
+    const broad = profile(
+      "ManyThings",
+      "A multi-category retailer with a wide range of unrelated products for everyone.",
       {
-        products: [{ name: "Strategy Sprint", category: "service" }],
-        purchaseFriction: "high" as const,
+        products: [
+          { name: "Lamp", category: "home" },
+          { name: "Serum", category: "beauty" },
+          { name: "Shoes", category: "fashion" },
+          { name: "Snacks", category: "food" },
+        ],
+        targetCustomers: ["everyone"],
       },
-    ],
-    [
-      "e-commerce",
-      {
-        products: [{ name: "FocusKit Planner", category: "productivity", priceText: "$49" }],
-        purchaseFriction: "low" as const,
-      },
-    ],
-  ])("keeps readiness evidence-specific for %s brands", (_name, overrides) => {
-    const dimensions = scoreReadiness({ ...profile, ...overrides });
-    expect(dimensions.find((item) => item.key === "tracking-readiness")?.evidenceIds).toContain(
-      "e2",
     );
-    expect(dimensions.find((item) => item.key === "sample-fulfillment")?.evidenceIds).toContain(
-      "e2",
-    );
-    expect(dimensions.find((item) => item.key === "claims-safety")?.status).not.toBeUndefined();
-  });
-
-  it("caps overall readiness when critical operational evidence is unknown", () => {
-    const unproven = {
-      ...profile,
-      evidence: profile.evidence.map((item) => ({
-        ...item,
-        excerpt: item.excerpt.replace(
-          /affiliate link tracking, creator samples in stock, approved claims, and disclosure guidelines/i,
-          "a clear weekly planning method",
-        ),
-      })),
-    };
-    const report = assembleDeterministicReport(unproven);
-    expect(report.readinessSummary.score).toBeLessThanOrEqual(59);
-    expect(report.readinessSummary.status).toBe("prepare-first");
+    for (const candidate of [sparse, broad]) {
+      const report = assembleDeterministicReport(candidate);
+      expect(report.recommendationState).toBe("preliminary-hypotheses");
+      expect(report.northStar).toBeNull();
+      expect(report.readinessSummary.score).toBeNull();
+      expect(report.clarifyingQuestions.length).toBeGreaterThanOrEqual(3);
+    }
   });
 });

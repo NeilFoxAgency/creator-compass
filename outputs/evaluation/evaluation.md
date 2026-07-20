@@ -1,22 +1,18 @@
 # CreatorCompass evaluation report
 
-Generated: 2026-07-16T22:05:13.436Z
+Generated: 2026-07-20T01:34:27.134Z
 
-**Result: PASS (12/12)**
+**Result: PASS (8/8)**
 
-| Case | Result | North Star | Readiness | Evidence | Unique |
+| Case | Result | North Star | Recommended territories | Prohibited absent | Grammar |
 |---|---|---|---|---|---|
-| TrailKind | PASS | outdoor-recreation | prepare-first | yes | yes |
-| DailyTable | PASS | cooking-and-meal-preparation | prepare-first | yes | yes |
-| Main Street HVAC | PASS | home-improvement | prepare-first | yes | yes |
-| ClearClaim | PASS | wellness-routines | prepare-first | yes | yes |
-| QuietDesk | PASS | productivity-systems | prepare-first | yes | yes |
-| GlowTheory | PASS | skincare-education | prepare-first | yes | yes |
-| PawRoutine | PASS | pet-care | prepare-first | yes | yes |
-| CourseCraft | PASS | career-development | prepare-first | yes | yes |
-| LoopBottle | PASS | sustainable-living | prepare-first | yes | yes |
-| PixelForge | PASS | miniature-painting | prepare-first | yes | yes |
-| ManyThings | PASS | ABSTAINED | insufficient-evidence | yes | yes |
-| SparseBrand | PASS | ABSTAINED | insufficient-evidence | yes | yes |
+| OpenSEO | PASS | seo-and-search-marketing | seo-and-search-marketing, ai-agents-and-workflow-automation, agency-operations, web-development, growth-marketing-and-conversion-optimization, open-source-and-self-hosting | yes | yes |
+| PipelineFlow | PASS | growth-marketing-and-conversion-optimization | growth-marketing-and-conversion-optimization, no-code-and-business-automation, ai-agents-and-workflow-automation, saas-and-indie-hacking, seo-and-search-marketing, open-source-and-self-hosting | yes | yes |
+| CodeHarbor | PASS | developer-tools | developer-tools, open-source-and-self-hosting, ai-agents-and-workflow-automation, web-development, saas-and-indie-hacking | yes | yes |
+| GlowTheory | PASS | skincare-education | skincare-education, beauty-tutorials, fitness-education, running | yes | yes |
+| TrailKind | PASS | camping | camping, outdoor-recreation | yes | yes |
+| Main Street HVAC | PASS | home-improvement | home-improvement, local-discovery, small-business-website-improvement | yes | yes |
+| ManyThings | PASS | ABSTAINED | web-development, no-code-and-business-automation, ai-agents-and-workflow-automation, developer-tools | yes | yes |
+| SparseBrand | PASS | ABSTAINED | none | yes | yes |
 
-The suite checks structure, exact portfolio composition, evidence coverage, uniqueness, prohibited claims, schema validity, and North Star availability. It intentionally does not compare exact prose.
+The suite checks eligibility, bounded variable portfolios, B2B and consumer relevance, product-aware readiness, OpenSEO attribution safety, abstention, schema validity, and deterministic grammar.

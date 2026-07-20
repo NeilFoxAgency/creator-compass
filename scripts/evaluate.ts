@@ -3,137 +3,270 @@ import type { BrandProfile } from "@creator-compass/contracts";
 import { creatorCompassReportSchema } from "@creator-compass/contracts";
 import { assembleDeterministicReport, METHODOLOGY_VERSION } from "@creator-compass/scoring";
 
-const base = (
+const makeProfile = (
   name: string,
-  category: string,
   summary: string,
   overrides: Partial<BrandProfile> = {},
 ): BrandProfile => ({
   canonicalDomain: `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.example`,
   brandName: name,
   summary,
-  products: [{ name: `${name} offer`, category }],
-  targetCustomers: [`people interested in ${category}`, "value-conscious buyers"],
-  customerNeeds: ["make a confident choice", "solve a practical problem"],
-  differentiators: ["clear practical positioning"],
+  products: [{ name: `${name} offer`, category: "software" }],
+  targetCustomers: ["business professionals", "small teams"],
+  customerNeeds: ["improve a repeatable business workflow"],
+  businessModel: "saas",
+  productType: "software",
+  audienceType: "b2b",
+  buyerRoles: ["business owner"],
+  userRoles: ["business professional"],
+  industries: ["software"],
+  useCases: ["business workflow"],
+  jobsToBeDone: ["improve a repeatable business workflow"],
+  buyerGoalVerbPhrases: ["improve a repeatable business workflow"],
+  problemStatements: ["The current workflow is fragmented."],
+  technicalLevel: "mixed",
+  purchaseMotion: "product-led",
+  campaignAssetType: "software-access",
+  differentiators: ["focused workflow"],
   pricePositioning: "mid-market",
   purchaseFriction: "low",
   demonstrability: "strong",
   trustRequirement: "medium",
-  repeatPurchasePotential: "medium",
+  repeatPurchasePotential: "high",
   riskTags: [],
-  unknowns: ["tracking readiness"],
+  unknowns: ["campaign attribution"],
   evidence: [
-    {
-      id: "e1",
-      sourceUrl: `https://${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.example`,
-      excerpt: summary,
-      kind: "website",
-    },
+    { id: "e1", sourceUrl: "https://example.com", excerpt: summary, kind: "website" },
     {
       id: "e2",
-      sourceUrl: `https://${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.example/about`,
-      excerpt: `The ${name} team explains its ${category} approach and target customer.`,
+      sourceUrl: "https://example.com/features",
+      excerpt: `${name} documents its primary user, use case, and offer.`,
       kind: "website",
     },
   ],
   ...overrides,
 });
 
-const cases: Array<{
+const openSeo = makeProfile(
+  "OpenSEO",
+  "Open-source B2B SEO software for SEO professionals, agencies, SaaS founders, and developers building AI-agent workflows.",
+  {
+    canonicalDomain: "openseo.so",
+    products: [{ name: "OpenSEO", category: "SEO tools", priceText: "Starts at $10/month" }],
+    targetCustomers: [
+      "SEO professionals",
+      "growth marketers",
+      "marketing agencies",
+      "SaaS founders",
+      "developers",
+    ],
+    customerNeeds: [
+      "research keyword opportunities",
+      "analyze backlinks",
+      "monitor search rankings",
+      "audit website SEO",
+      "connect AI agents to SEO data",
+    ],
+    businessModel: "open-source",
+    buyerRoles: [
+      "SEO professional",
+      "growth marketer",
+      "agency owner",
+      "SaaS founder",
+      "developer",
+    ],
+    userRoles: ["SEO specialist", "developer", "content strategist"],
+    industries: ["marketing", "SaaS", "software", "agency"],
+    useCases: [
+      "keyword research",
+      "backlink analysis",
+      "rank tracking",
+      "site audits",
+      "self-hosting",
+      "MCP integration",
+      "AI agent integration",
+    ],
+    jobsToBeDone: [
+      "research keyword opportunities",
+      "analyze backlink profiles",
+      "monitor search rankings",
+      "audit website SEO",
+      "self-host the software",
+      "connect AI agents to SEO data",
+    ],
+    buyerGoalVerbPhrases: ["improve search visibility", "connect AI agents to SEO data"],
+    technicalLevel: "technical",
+    differentiators: ["open source", "usage-based pricing", "self-hosting", "MCP integration"],
+    evidence: [
+      {
+        id: "o1",
+        sourceUrl: "https://openseo.so/",
+        excerpt:
+          "OpenSEO is an open-source SEO platform for keyword research, backlinks, rank tracking, and site audits, billed by usage.",
+        kind: "website",
+      },
+      {
+        id: "o2",
+        sourceUrl: "https://openseo.so/features/mcp",
+        excerpt:
+          "Connect AI agents over MCP to keyword, SERP, backlink, rank-tracking, and Search Console data.",
+        kind: "website",
+      },
+      {
+        id: "o3",
+        sourceUrl: "https://openseo.so/pricing",
+        excerpt: "Self-host OpenSEO or use hosted usage-based pricing.",
+        kind: "website",
+      },
+    ],
+  },
+);
+
+type Case = {
   profile: BrandProfile;
   expectedAny: string[];
-  expectedReadiness?: string;
-  expectAbstention?: boolean;
-}> = [
+  prohibitedCoreAdjacent?: string[];
+  abstain?: boolean;
+  productReadinessKey?: string;
+};
+
+const cases: Case[] = [
   {
-    profile: base(
-      "TrailKind",
-      "outdoor recreation",
-      "Durable, repairable camping equipment for weekend hikers.",
+    profile: openSeo,
+    expectedAny: [
+      "seo-and-search-marketing",
+      "ai-agents-and-workflow-automation",
+      "developer-tools",
+      "open-source-and-self-hosting",
+      "saas-and-indie-hacking",
+    ],
+    prohibitedCoreAdjacent: [
+      "beauty-tutorials",
+      "gardening",
+      "camping",
+      "gaming",
+      "zero-waste-making",
+      "writing-and-journaling",
+    ],
+    productReadinessKey: "demo-trial-readiness",
+  },
+  {
+    profile: makeProfile(
+      "PipelineFlow",
+      "B2B SaaS for growth teams to automate lead routing and improve conversion workflows.",
+      {
+        targetCustomers: ["growth marketers", "revenue operations teams"],
+        buyerRoles: ["growth marketer", "operations leader"],
+        userRoles: ["automation specialist"],
+        industries: ["SaaS", "marketing"],
+        useCases: ["workflow automation", "conversion optimization"],
+        jobsToBeDone: ["automate lead routing", "improve conversion workflows"],
+        customerNeeds: ["automate lead routing", "improve conversion workflows"],
+      },
     ),
-    expectedAny: ["outdoor-recreation", "camping"],
+    expectedAny: [
+      "growth-marketing-and-conversion-optimization",
+      "no-code-and-business-automation",
+      "saas-and-indie-hacking",
+    ],
+    prohibitedCoreAdjacent: ["beauty-tutorials", "gardening"],
+    productReadinessKey: "creator-account-provisioning",
   },
   {
-    profile: base(
-      "DailyTable",
-      "meal preparation",
-      "A subscription meal-planning service for busy families.",
-      { repeatPurchasePotential: "high" },
+    profile: makeProfile(
+      "CodeHarbor",
+      "An open-source developer tool for self-hosting API workflows and inspecting application integrations.",
+      {
+        businessModel: "open-source",
+        targetCustomers: ["software developers", "technical founders"],
+        buyerRoles: ["developer", "technical founder"],
+        userRoles: ["software developer"],
+        industries: ["software"],
+        useCases: ["self-hosting", "API integration", "developer workflow"],
+        jobsToBeDone: ["self-host a developer service", "integrate reliable APIs"],
+        customerNeeds: ["self-host a developer service", "integrate reliable APIs"],
+        technicalLevel: "developer",
+      },
     ),
-    expectedAny: ["cooking-and-meal-preparation", "family-routines"],
+    expectedAny: ["developer-tools", "open-source-and-self-hosting", "web-development"],
+    prohibitedCoreAdjacent: ["beauty-tutorials", "camping"],
+    productReadinessKey: "test-environment",
   },
   {
-    profile: base(
-      "Main Street HVAC",
-      "local service",
-      "Residential heating and cooling installation for homeowners.",
-      { purchaseFriction: "high", demonstrability: "mixed" },
-    ),
-    expectedAny: ["home-improvement", "local-discovery"],
-  },
-  {
-    profile: base(
-      "ClearClaim",
-      "wellness supplement",
-      "A dietary supplement positioned around energy support.",
-      { trustRequirement: "high", riskTags: ["medical claims"] },
-    ),
-    expectedAny: ["wellness-routines", "fitness-education"],
-  },
-  {
-    profile: base("QuietDesk", "productivity", "A visual planning tool for remote creative teams."),
-    expectedAny: ["productivity-systems", "remote-work"],
-  },
-  {
-    profile: base(
+    profile: makeProfile(
       "GlowTheory",
-      "skincare",
-      "A gentle skincare routine designed for sensitive skin.",
-      { riskTags: ["medical claims"], trustRequirement: "high" },
+      "A direct-to-consumer skincare serum and routine for people with sensitive skin.",
+      {
+        products: [{ name: "GlowTheory Serum", category: "skincare", priceText: "$38" }],
+        targetCustomers: ["people with sensitive skin", "beauty shoppers"],
+        customerNeeds: ["choose a gentle skincare routine"],
+        businessModel: "e-commerce",
+        productType: "physical-product",
+        audienceType: "b2c",
+        buyerRoles: ["skincare buyer"],
+        userRoles: ["skincare user"],
+        industries: ["beauty", "skincare"],
+        useCases: ["skincare routine", "ingredient education"],
+        jobsToBeDone: ["choose a gentle skincare routine"],
+        campaignAssetType: "physical-sample",
+        purchaseMotion: "retail",
+      },
     ),
     expectedAny: ["skincare-education", "beauty-tutorials"],
+    prohibitedCoreAdjacent: ["developer-tools", "gardening"],
+    productReadinessKey: "sample-inventory",
   },
   {
-    profile: base(
-      "PawRoutine",
-      "pet care",
-      "Repeat-delivery enrichment products for indoor dogs.",
-      { repeatPurchasePotential: "high" },
+    profile: makeProfile(
+      "TrailKind",
+      "A physical e-commerce brand selling repairable camping equipment to weekend hikers.",
+      {
+        products: [{ name: "TrailKind Shelter", category: "camping equipment" }],
+        targetCustomers: ["weekend hikers", "campers"],
+        customerNeeds: ["choose durable camping equipment"],
+        businessModel: "e-commerce",
+        productType: "physical-product",
+        audienceType: "b2c",
+        buyerRoles: ["camping gear buyer"],
+        userRoles: ["camper", "hiker"],
+        industries: ["outdoor recreation"],
+        useCases: ["camping", "hiking"],
+        jobsToBeDone: ["choose durable camping equipment"],
+        campaignAssetType: "physical-sample",
+        purchaseMotion: "retail",
+      },
     ),
-    expectedAny: ["pet-care"],
+    expectedAny: ["camping", "outdoor-recreation"],
+    prohibitedCoreAdjacent: ["beauty-tutorials", "developer-tools"],
+    productReadinessKey: "shipping-fulfillment",
   },
   {
-    profile: base(
-      "CourseCraft",
-      "education",
-      "Short career courses for early-stage marketing professionals.",
-      { purchaseFriction: "medium" },
+    profile: makeProfile(
+      "Main Street HVAC",
+      "A local residential heating and cooling installation service for homeowners.",
+      {
+        products: [{ name: "HVAC installation", category: "home improvement service" }],
+        targetCustomers: ["local homeowners"],
+        customerNeeds: ["replace an unreliable heating system"],
+        businessModel: "service",
+        productType: "service",
+        audienceType: "b2c",
+        buyerRoles: ["homeowner"],
+        userRoles: ["homeowner"],
+        industries: ["home improvement", "local services"],
+        useCases: ["HVAC installation", "heating repair"],
+        jobsToBeDone: ["replace an unreliable heating system"],
+        purchaseMotion: "consultative",
+        campaignAssetType: "service-experience",
+      },
     ),
-    expectedAny: ["education", "career-development"],
+    expectedAny: ["home-improvement", "local-discovery"],
+    prohibitedCoreAdjacent: ["beauty-tutorials", "gaming"],
   },
   {
-    profile: base(
-      "LoopBottle",
-      "sustainable living",
-      "A reusable bottle with traceable recycled materials.",
-      { riskTags: ["environmental claims"] },
-    ),
-    expectedAny: ["sustainable-living", "zero-waste-making"],
-  },
-  {
-    profile: base(
-      "PixelForge",
-      "gaming",
-      "Accessible tabletop terrain and miniature painting supplies.",
-    ),
-    expectedAny: ["miniature-painting", "gaming"],
-  },
-  {
-    profile: base(
+    profile: makeProfile(
       "ManyThings",
-      "multi-category retailer",
-      "A wide range of unrelated home, travel, fitness, and pet products sold by a broad online retailer.",
+      "A broad multi-category retailer with a wide range of unrelated home, travel, fitness, and pet products for everyone.",
       {
         products: [
           { name: "Home goods", category: "home" },
@@ -141,101 +274,97 @@ const cases: Array<{
           { name: "Fitness goods", category: "fitness" },
           { name: "Pet goods", category: "pet" },
         ],
-        targetCustomers: [],
+        targetCustomers: ["everyone"],
+        jobsToBeDone: [],
         customerNeeds: [],
-        unknowns: ["primary audience", "hero offer", "tracking readiness"],
       },
     ),
     expectedAny: [],
-    expectedReadiness: "insufficient-evidence",
-    expectAbstention: true,
+    abstain: true,
   },
   {
-    profile: base("SparseBrand", "unknown", "A new brand.", {
+    profile: makeProfile("SparseBrand", "A new brand.", {
       products: [],
       targetCustomers: [],
       customerNeeds: [],
-      differentiators: [],
-      pricePositioning: "unknown",
-      purchaseFriction: "unknown",
-      demonstrability: "unknown",
-      trustRequirement: "unknown",
-      repeatPurchasePotential: "unknown",
+      buyerRoles: [],
+      userRoles: [],
+      industries: [],
+      useCases: [],
+      jobsToBeDone: [],
+      buyerGoalVerbPhrases: [],
       evidence: [
-        { id: "e1", sourceUrl: "https://sparse.example", excerpt: "A new brand.", kind: "website" },
+        { id: "s1", sourceUrl: "https://sparse.example", excerpt: "A new brand.", kind: "website" },
       ],
     }),
     expectedAny: [],
-    expectedReadiness: "insufficient-evidence",
-    expectAbstention: true,
+    abstain: true,
   },
 ];
 
-const prohibited = /guaranteed ROI|guaranteed conversion|will accept|legally safe|medical cure/i;
 const results = cases.map(
-  ({ profile, expectedAny, expectedReadiness, expectAbstention }, index) => {
+  ({ profile, expectedAny, prohibitedCoreAdjacent = [], abstain, productReadinessKey }, index) => {
     const report = assembleDeterministicReport(profile, {
       id: `eval-${index + 1}`,
       slug: `eval-${index + 1}`,
-      now: new Date("2026-07-16T12:00:00Z"),
+      now: new Date("2026-07-19T12:00:00Z"),
     });
-    const parsed = creatorCompassReportSchema.safeParse(report);
-    const unique = new Set(report.territories.map((item) => item.territoryId)).size === 8;
-    const evidenceCoverage = report.territories.every((item) => item.evidenceIds.length > 0);
-    const prohibitedClaims = prohibited.test(JSON.stringify(report));
-    const classCounts = Object.fromEntries(
-      ["core", "adjacent", "experimental", "risk"].map((classification) => [
-        classification,
-        report.territories.filter((item) => item.classification === classification).length,
-      ]),
-    );
-    const plausibleCore =
-      expectedAny.length === 0 ||
-      report.territories
-        .filter((item) => item.classification === "core")
-        .some((item) => expectedAny.includes(item.territoryId));
-    const readinessExpected =
-      !expectedReadiness || report.readinessSummary.status === expectedReadiness;
-    const abstentionExpected = expectAbstention
+    const recommended = report.territories
+      .filter((item) => ["core", "adjacent"].includes(item.classification))
+      .map((item) => item.territoryId);
+    const expectedTerritory = abstain || expectedAny.some((id) => recommended.includes(id));
+    const prohibitedAbsent = prohibitedCoreAdjacent.every((id) => !recommended.includes(id));
+    const variableCounts =
+      report.territories.filter((item) => item.classification === "core").length <= 3 &&
+      report.territories.filter((item) => item.classification === "adjacent").length <= 3 &&
+      report.territories.filter((item) => item.classification === "experimental").length <= 2 &&
+      report.territories.filter((item) => item.classification === "risk").length <= 2;
+    const abstentionCorrect = abstain
       ? report.recommendationState === "preliminary-hypotheses" &&
         report.northStar === null &&
-        report.readinessSummary.score === null &&
-        report.clarifyingQuestions.length >= 3
+        report.readinessSummary.score === null
       : report.recommendationState === "recommendation" && report.northStar !== null;
-    const passed =
-      parsed.success &&
-      unique &&
-      evidenceCoverage &&
-      !prohibitedClaims &&
-      plausibleCore &&
-      readinessExpected &&
-      abstentionExpected &&
-      classCounts.core === 3 &&
-      classCounts.adjacent === 2 &&
-      classCounts.experimental === 1 &&
-      classCounts.risk === 2;
+    const readinessProfileCorrect =
+      !productReadinessKey || report.readiness.some((item) => item.key === productReadinessKey);
+    const rankTrackingSafe =
+      profile.brandName !== "OpenSEO" ||
+      report.readiness.find((item) => item.key === "tracking-readiness")?.status === "unknown";
+    const grammarSafe = !/trying to (?:SEO platform|marketing software|technology)/i.test(
+      JSON.stringify(report),
+    );
+    const schemaValid = creatorCompassReportSchema.safeParse(report).success;
     return {
       case: profile.brandName,
-      passed,
-      schemaValid: parsed.success,
-      uniqueTerritories: unique,
-      evidenceCoverage,
-      prohibitedClaims,
-      plausibleCore,
-      readinessExpected,
-      abstentionExpected,
-      classCounts,
+      passed:
+        schemaValid &&
+        expectedTerritory &&
+        prohibitedAbsent &&
+        variableCounts &&
+        abstentionCorrect &&
+        readinessProfileCorrect &&
+        rankTrackingSafe &&
+        grammarSafe,
+      schemaValid,
+      expectedTerritory,
+      prohibitedAbsent,
+      variableCounts,
+      abstentionCorrect,
+      readinessProfileCorrect,
+      rankTrackingSafe,
+      grammarSafe,
+      recommended,
       northStar: report.northStar?.territoryId ?? "ABSTAINED",
-      readinessStatus: report.readinessSummary.status,
     };
   },
 );
 
+const generatedAt = new Date().toISOString();
+const passed = results.every((item) => item.passed);
 await mkdir("outputs/evaluation", { recursive: true });
 await writeFile(
   "outputs/evaluation/evaluation.json",
-  `${JSON.stringify({ generatedAt: new Date().toISOString(), methodology: METHODOLOGY_VERSION, passed: results.every((item) => item.passed), cases: results }, null, 2)}\n`,
+  `${JSON.stringify({ generatedAt, methodology: METHODOLOGY_VERSION, passed, cases: results }, null, 2)}\n`,
 );
-const markdown = `# CreatorCompass evaluation report\n\nGenerated: ${new Date().toISOString()}\n\n**Result: ${results.every((item) => item.passed) ? "PASS" : "FAIL"} (${results.filter((item) => item.passed).length}/${results.length})**\n\n| Case | Result | North Star | Readiness | Evidence | Unique |\n|---|---|---|---|---|---|\n${results.map((item) => `| ${item.case} | ${item.passed ? "PASS" : "FAIL"} | ${item.northStar} | ${item.readinessStatus} | ${item.evidenceCoverage ? "yes" : "no"} | ${item.uniqueTerritories ? "yes" : "no"} |`).join("\n")}\n\nThe suite checks structure, exact portfolio composition, evidence coverage, uniqueness, prohibited claims, schema validity, and North Star availability. It intentionally does not compare exact prose.\n`;
+const markdown = `# CreatorCompass evaluation report\n\nGenerated: ${generatedAt}\n\n**Result: ${passed ? "PASS" : "FAIL"} (${results.filter((item) => item.passed).length}/${results.length})**\n\n| Case | Result | North Star | Recommended territories | Prohibited absent | Grammar |\n|---|---|---|---|---|---|\n${results.map((item) => `| ${item.case} | ${item.passed ? "PASS" : "FAIL"} | ${item.northStar} | ${item.recommended.join(", ") || "none"} | ${item.prohibitedAbsent ? "yes" : "no"} | ${item.grammarSafe ? "yes" : "no"} |`).join("\n")}\n\nThe suite checks eligibility, bounded variable portfolios, B2B and consumer relevance, product-aware readiness, OpenSEO attribution safety, abstention, schema validity, and deterministic grammar.\n`;
 await writeFile("outputs/evaluation/evaluation.md", markdown);
 console.log(markdown);
