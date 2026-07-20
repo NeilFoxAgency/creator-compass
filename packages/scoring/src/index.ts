@@ -380,6 +380,17 @@ const territoryFeaturePriorities: Record<string, string[]> = {
     "competitor analysis",
   ],
   "agency-operations": ["site audits", "backlink analysis", "keyword research", "client reporting"],
+  "ai-image-and-video-creation": [
+    "integration of multiple AI models",
+    "AI video generation",
+    "AI image generation",
+    "product photography",
+  ],
+  "creative-ai-and-design-workflows": [
+    "integration of multiple AI models",
+    "visual content production",
+    "product photography",
+  ],
 };
 
 function matchedUseCases(profile: BrandProfile, territory: CreatorTerritory) {
@@ -479,7 +490,7 @@ function recommendation(
     campaignConcepts: [
       {
         title: `${useCase}: working walkthrough`,
-        concept: `Have a creator use ${product} to ${goal} in a concrete ${useCase} workflow, showing inputs, decisions, output, and one limitation.`,
+        concept: `Have a creator use ${product} to ${goal} in a concrete workflow focused on ${useCase}, showing inputs, decisions, output, and one limitation.`,
         openingHook: `Here is how I use ${product} to ${goal}—and where it does not replace judgment.`,
       },
       {

@@ -155,6 +155,7 @@ const loova = profile(
     useCases: ["AI image generation", "AI video generation", "product photography"],
     jobsToBeDone: ["create AI images", "generate AI videos", "speed up creative production"],
     buyerGoalVerbPhrases: ["create AI images", "generate AI videos"],
+    differentiators: ["integration of multiple AI models", "product photography"],
     campaignAssetType: "software-access",
     demonstrability: "strong",
     evidence: [
@@ -186,6 +187,7 @@ describe("territory fit scoring", () => {
     expect(selectedIds).not.toContain("seo-and-search-marketing");
     expect(selectedText).not.toMatch(/site audits|keyword research|SERPs|backlinks|rank tracking/i);
     expect(selectedText).toContain("Loova AI");
+    expect(selectedText).toContain("integration of multiple AI models");
   });
 
   it("requires direct website evidence before a territory can become Core", () => {
