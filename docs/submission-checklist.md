@@ -20,10 +20,10 @@
 - [x] Record `/feedback` Session ID: `019f6c13-ed02-76c1-b025-f2231ba00854`
 - [x] Prepare Project Story
 - [x] Prepare YouTube title, description, tags, and voiceover plan
-- [ ] Record a public demo shorter than three minutes
-- [ ] Confirm the demo audio explicitly explains both Codex and GPT-5.6
+- [x] Record a public demo shorter than three minutes
+- [x] Confirm the demo audio explicitly explains both Codex and GPT-5.6
+- [x] Upload the public YouTube demo and record its URL: `https://www.youtube.com/watch?v=YepD6pFN0Dw`
 - [ ] Confirm the video contains no unlicensed music or unauthorized material
-- [ ] Upload the public YouTube demo and record its URL
 - [ ] Add final thumbnail and screenshots to Devpost
 - [ ] Submit before Tuesday, July 21, 2026 at 8:00 PM Eastern
 - [ ] Confirm the Devpost entry state is `Submitted`, not `Draft`
@@ -34,6 +34,8 @@
 CreatorCompass turns a public brand website into an evidence-backed direction for creator sponsorships. It reads a bounded set of public pages, creates immutable evidence records, builds a structured brand profile, scores product-aware readiness and creator-territory fit in deterministic TypeScript, enriches a bounded candidate set, and uses GPT-5.6 as the final strategic adjudicator. The result is a shareable report containing a defensible variable-size territory portfolio, campaign concepts, a North Star test, readiness gaps, evidence, assumptions, uncertainty, and practical next steps. When the evidence is insufficient, CreatorCompass abstains rather than forcing a recommendation. It helps brands answer "where do we belong?" before paying for a creator database or beginning outreach.
 
 ## Judge testing instructions
+
+Public demo video: `https://www.youtube.com/watch?v=YepD6pFN0Dw`
 
 Live application: `https://creatorcompass.neilfoxagency.com/`
 
