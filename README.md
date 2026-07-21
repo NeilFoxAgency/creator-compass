@@ -4,7 +4,7 @@
 
 CreatorCompass turns one input - a public brand website - into an evidence-backed creator sponsorship strategy. It helps a brand decide which creator communities, campaign formats, and first tests make sense before the brand pays for a creator database or begins outreach.
 
-[Try the live app](https://creatorcompass.neilfoxagency.com/) | [Open the sample report](https://creatorcompass.neilfoxagency.com/reports/sample-neil-fox-agency) | [View a GPT-5.6-reviewed production report](https://creatorcompass.neilfoxagency.com/reports/provided-brand-example-af675cc0)
+[Try the live app](https://creatorcompass.neilfoxagency.com/) | [Watch the demo](https://www.youtube.com/watch?v=YepD6pFN0Dw) | [Open the sample report](https://creatorcompass.neilfoxagency.com/reports/sample-neil-fox-agency) | [View a GPT-5.6-reviewed report](https://creatorcompass.neilfoxagency.com/reports/provided-brand-example-af675cc0)
 
 ## OpenAI Build Week submission
 
@@ -12,6 +12,7 @@ CreatorCompass turns one input - a public brand website - into an evidence-backe
 | --- | --- |
 | Category | Work & Productivity |
 | Built with | OpenAI Codex and GPT-5.6 |
+| Public demo video | [CreatorCompass OpenAI Build Week demo](https://www.youtube.com/watch?v=YepD6pFN0Dw) |
 | Primary Codex `/feedback` Session ID | `019f6c13-ed02-76c1-b025-f2231ba00854` |
 | Live application | [creatorcompass.neilfoxagency.com](https://creatorcompass.neilfoxagency.com/) |
 | License | MIT |
@@ -82,7 +83,7 @@ Codex accelerated implementation, but the central product, quality, and ethical 
 - Preserve useful deterministic output when a provider fails
 - Show provider provenance without turning provider fallback into a user-facing error
 - Avoid contact scraping, automated mass outreach, and unsupported ROI claims
-- Test recommendations against real brands and treat implausible output as a product defect, even when the report looked polished
+- Treat implausible output as a product defect, even when the report looks polished
 
 This human-model division is central to the implementation. CreatorCompass is designed to preserve user agency and make strategic uncertainty visible.
 
@@ -109,13 +110,13 @@ GPT-5.6 must then:
 5. Produce the campaign format, creator direction, first-test shape, rationale, and fix-first priorities.
 6. Return data matching the strict `finalReviewSchema`.
 
-The Worker validates the result again before it can enter a report. A successful OpenAI review is recorded in the report as `aiReview.usedGpt56: true` and `providerPath.finalReview: openai-gpt-5.6`.
+The Worker validates the result again before it can enter a report. A successful OpenAI review is recorded as `aiReview.usedGpt56: true` and `providerPath.finalReview: openai-gpt-5.6`.
 
 GPT-5.6 is therefore used for bounded strategic judgment, while TypeScript owns factual evidence, scoring, thresholds, grounding, and delivery validation. If GPT-5.6 is unavailable, CreatorCompass can still deliver a content-validated deterministic or secondary-provider report, and it records that path honestly.
 
 Relevant implementation files:
 
-- [`apps/worker/src/index.ts`](apps/worker/src/index.ts) - analysis pipeline, provider routing, final review, validation, persistence
+- [`apps/worker/src/index.ts`](apps/worker/src/index.ts) - analysis pipeline, provider routing, final review, validation, and persistence
 - [`packages/ai/src/index.ts`](packages/ai/src/index.ts) - structured model-provider adapters
 - [`packages/contracts/src/index.ts`](packages/contracts/src/index.ts) - Zod schemas, including `finalReviewSchema`
 - [`packages/scoring/src/index.ts`](packages/scoring/src/index.ts) - deterministic readiness and territory-fit logic
@@ -162,11 +163,12 @@ More detail is available in [`docs/architecture.md`](docs/architecture.md), [`do
 
 The fastest path does not require rebuilding anything:
 
-1. Open [the live application](https://creatorcompass.neilfoxagency.com/).
-2. Enter a public brand website and complete the Turnstile check.
-3. Follow the named analysis stages to the report.
-4. Inspect the North Star, territory map, readiness review, evidence drawer, and methodology line.
-5. Test sharing and browser print-to-PDF.
+1. Watch the [public demo video](https://www.youtube.com/watch?v=YepD6pFN0Dw).
+2. Open [the live application](https://creatorcompass.neilfoxagency.com/).
+3. Enter a public brand website and complete the Turnstile check.
+4. Follow the named analysis stages to the report.
+5. Inspect the North Star, territory map, readiness review, evidence drawer, and methodology line.
+6. Test sharing and browser print-to-PDF.
 
 Notes:
 
@@ -228,33 +230,14 @@ The latest committed evaluation report is at [`outputs/evaluation/evaluation.md`
 
 A full interactive Worker run requires Cloudflare bindings and any model providers you want to exercise.
 
-1. Authenticate Wrangler:
-
 ```bash
 pnpm exec wrangler login
-```
-
-2. Copy the environment template and add secrets locally:
-
-```bash
 cp .env.example .dev.vars
-```
-
-At minimum, configure the provider keys you intend to test. Never commit `.dev.vars`.
-
-3. Apply D1 migrations locally:
-
-```bash
 pnpm exec wrangler d1 migrations apply creator-compass --local
-```
-
-4. Build the web application and start Wrangler:
-
-```bash
 pnpm dev
 ```
 
-For a fork or separate deployment, replace the project-specific D1, KV, Queue, route, and Turnstile bindings in `wrangler.jsonc`. Local API testing may use a matching `ADMIN_BYPASS_SECRET` through the `x-creator-compass-admin` header, or a Turnstile site key and verification endpoint valid for the local environment.
+Never commit `.dev.vars`. For a fork or separate deployment, replace the project-specific D1, KV, Queue, route, and Turnstile bindings in `wrangler.jsonc`.
 
 ## Configuration
 
