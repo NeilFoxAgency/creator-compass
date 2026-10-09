@@ -59,7 +59,7 @@ function Footer() {
       <div>
         <a href="https://neilfoxagency.com/privacy">Privacy</a>
         <a href="https://neilfoxagency.com/terms">Terms</a>
-        <a href="https://neilfoxagency.com/youtube-sponsorship-agency">Built by Neil Fox Agency</a>
+        <a href="https://neilfoxagency.com/for-brands">Built by Neil Fox Agency</a>
         <span>© 2026 Neil Fox Agency</span>
       </div>
     </footer>
